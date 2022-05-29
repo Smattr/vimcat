@@ -26,11 +26,9 @@ int main(int argc, char **argv) {
 
   while (true) {
     static const struct option opts[] = {
-        // clang-format off
         {"debug", no_argument, 0, 'd'},
-        {"help",  no_argument, 0, 'h'},
+        {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0},
-        // clang-format on
     };
 
     int index = 0;
