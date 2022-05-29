@@ -28,11 +28,12 @@ int main(int argc, char **argv) {
     static const struct option opts[] = {
         {"debug", no_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
+        {"version", no_argument, 0, 'v'},
         {0, 0, 0, 0},
     };
 
     int index = 0;
-    int c = getopt_long(argc, argv, "dh", opts, &index);
+    int c = getopt_long(argc, argv, "dhv", opts, &index);
 
     if (c == -1)
       break;
@@ -46,6 +47,10 @@ int main(int argc, char **argv) {
     case 'h': // --help
       fprintf(stderr, "usage: %s [--debug] [filename1 [filename2 [...]]]\n",
               argv[0]);
+      return EXIT_SUCCESS;
+
+    case 'v': // --version
+      printf("vimcat version %s\n", vimcat_version());
       return EXIT_SUCCESS;
 
     default:
