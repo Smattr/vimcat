@@ -622,6 +622,7 @@ static utf8_t get_utf8(FILE *f) {
   // read byte 2
   c = getc(f);
   if (c == EOF || ((uint8_t)c >> 6) != 2) {
+    DEBUG("malformed byte 0x%x seen", (unsigned)c);
     if (c != EOF)
       ungetc(c, f);
     return REPLACEMENT;
@@ -635,6 +636,7 @@ static utf8_t get_utf8(FILE *f) {
   // read byte 3
   c = getc(f);
   if (c == EOF || ((uint8_t)c >> 6) != 2) {
+    DEBUG("malformed byte 0x%x seen", (unsigned)c);
     if (c != EOF)
       ungetc(c, f);
     return REPLACEMENT;
@@ -648,6 +650,7 @@ static utf8_t get_utf8(FILE *f) {
   // read byte 4
   c = getc(f);
   if (c == EOF || ((uint8_t)c >> 6) != 2) {
+    DEBUG("malformed byte 0x%x seen", (unsigned)c);
     if (c != EOF)
       ungetc(c, f);
     return REPLACEMENT;
