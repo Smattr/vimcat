@@ -14,6 +14,7 @@ def test_utf8():
 
   # run `vimcat` on a sample containing characters of various lengths
   input = Path(__file__).parent / "utf-8.txt"
+  assert input.exists(), "missing test case input"
   output = subprocess.check_output(["vimcat", input], universal_newlines=True)
 
   # read the sample with Python, which we know understands UTF-8 correctly
