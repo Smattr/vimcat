@@ -596,6 +596,14 @@ static utf8_t get_utf8(FILE *f) {
   if (c == EOF)
     return (utf8_t){{0}};
 
+  utf8_t u = {{c}};
+
+  // recognise Windows line endings and treat them as a single character
+  if (c == '\r' && eat_if(f, '\n')) {
+    u.bytes[1] = '\n';
+    return u;
+  }
+
   // From the UTF-8 RFC (3629):
   //
   //   Char. number range  |        UTF-8 octet sequence
@@ -609,22 +617,23 @@ static utf8_t get_utf8(FILE *f) {
   // So we can determine the length of the current character by the bits set in
   // the first byte.
 
-  // is the first byte malformed?
-  if (((uint8_t)c >> 3) == 31)
-    return REPLACEMENT;
-
-  utf8_t u = {{c}};
-
-  // recognise Windows line endings and treat them as a single character
-  if (c == '\r' && eat_if(f, '\n')) {
-    u.bytes[1] = '\n';
-    return u;
-  }
-
+  size_t length = 1;
   // is this a 1-byte character? Assume this is the common case, given we are
   // parsing programming source code.
-  if (LIKELY(((uint8_t)c >> 7) == 0))
+  if (LIKELY(((uint8_t)c >> 7) == 0)) {
     return u;
+  } else if (((uint8_t)c >> 5) == 6) {
+    length = 2;
+  } else if (((uint8_t)c >> 4) == 14) {
+    length = 3;
+  } else if (((uint8_t)c >> 3) == 30) {
+    length = 4;
+  } else {
+    // malformed first byte
+    return REPLACEMENT;
+  }
+
+  assert(length >= 2 && length <= 4);
 
   // read byte 2
   c = getc(f);
@@ -636,8 +645,7 @@ static utf8_t get_utf8(FILE *f) {
   }
   u.bytes[1] = c;
 
-  // is this a 2-byte character?
-  if (((uint8_t)c >> 5) == 6)
+  if (length == 2)
     return u;
 
   // read byte 3
@@ -650,8 +658,7 @@ static utf8_t get_utf8(FILE *f) {
   }
   u.bytes[2] = c;
 
-  // is this a 3-byte character?
-  if (((uint8_t)c >> 4) == 14)
+  if (length == 3)
     return u;
 
   // read byte 4
