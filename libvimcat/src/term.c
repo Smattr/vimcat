@@ -116,19 +116,19 @@ static bool utf8eq(utf8_t u, const char *s) {
 /// a grapheme, stored either inline as a ≤3-byte sequence or as a pointer to
 /// a heap-allocated NUL-terminated string
 typedef struct {
-  uintptr_t is_pointer : 1; ///< is the grapheme in the `.pointer` member?
   union {
-    uintptr_t pointer : sizeof(uintptr_t) * 8 - 1;
+    char *pointer;
     char value[3];
   };
+  bool is_pointer; ///< is the grapheme in the `.pointer` member?
 } grapheme_t;
 
 static bool grapheme_is_nul(const grapheme_t *g) {
   assert(g != NULL);
 
   if (g->is_pointer) {
-    assert(g->pointer != 0);
-    return strcmp((const char *)(uintptr_t)g->pointer, "") == 0;
+    assert(g->pointer != NULL);
+    return strcmp(g->pointer, "") == 0;
   }
 
   return g->value[0] == '\0';
@@ -139,7 +139,7 @@ static int grapheme_put(const grapheme_t *g, FILE *f) {
   assert(f != NULL);
 
   if (g->is_pointer) {
-    if (UNLIKELY(fputs((void *)(uintptr_t)g->pointer, f) == EOF))
+    if (UNLIKELY(fputs(g->pointer, f) == EOF))
       return errno;
 
   } else {
@@ -154,7 +154,7 @@ static void grapheme_free(grapheme_t *g) {
   assert(g != NULL);
 
   if (g->is_pointer)
-    free((void *)(uintptr_t)g->pointer);
+    free(g->pointer);
   memset(g, 0, sizeof(*g));
 }
 
@@ -755,8 +755,8 @@ int term_send(term_t *t, FILE *from) {
         memcpy(cell->grapheme.value, u.bytes, sizeof(cell->grapheme.value));
 
       } else {
-        cell->grapheme.pointer = (uintptr_t)strndup(u.bytes, sizeof(u.bytes));
-        if (UNLIKELY(cell->grapheme.pointer == 0))
+        cell->grapheme.pointer = strndup(u.bytes, sizeof(u.bytes));
+        if (UNLIKELY(cell->grapheme.pointer == NULL))
           return ENOMEM;
 
         cell->grapheme.is_pointer = true;
