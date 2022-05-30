@@ -435,11 +435,18 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
     break;
 
   case 22:
-  case 23:
     t->style.bold = false;
     break;
   case 24:
     t->style.underline = false;
+    break;
+
+  // treat reset of features we do not support as a no-op
+  case 23: // reset italic
+  case 25: // reset blinking
+  case 27: // reset inverse/reverse
+  case 28: // reset hidden/invisible
+  case 29: // reset strikethrough
     break;
 
   case 30 ... 37:
