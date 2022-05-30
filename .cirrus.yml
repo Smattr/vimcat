@@ -34,4 +34,4 @@ task:
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: pip3 install pytest
 
-  test_script: uname -sr && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- install
+  test_script: uname -sr && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
