@@ -31,6 +31,7 @@ if(HAS_WARNING_POINTER_ARITH)
 endif()
 
 add_subdirectory(libvimcat)
+add_subdirectory(test)
 add_subdirectory(vimcat)
 
 find_program(CLANG_FORMAT
