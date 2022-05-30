@@ -14,7 +14,7 @@ static int print(void *ignored, const char *line) {
     return errno;
 
   // the last file line may not be terminated, so ensure it displays correctly
-  if (line[strlen(line) - 1] != '\n')
+  if (strlen(line) == 0 || line[strlen(line) - 1] != '\n')
     putchar('\n');
 
   return 0;
