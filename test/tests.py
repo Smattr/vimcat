@@ -55,8 +55,7 @@ def test_utf8(case: str):
                                    universal_newlines=True)
 
   # read the sample with Python, which we know understands UTF-8 correctly
-  with open(input, "rt", encoding="utf-8") as f:
-    reference = f.read().strip()
+  reference = input.read_text(encoding="utf-8").strip()
 
   # `vimcat` should have given us the same, under the assumption no syntax
   # highlighting of basic text files is enabled
