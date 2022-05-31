@@ -13,7 +13,6 @@ from pathlib import Path
   "newline4.txt",
   "newline5.txt",
 ))
-@pytest.mark.xfail(strict=True)
 def test_newline(case: str):
   """
   check `vimcat` deals with various newline ending/not-ending correctly
