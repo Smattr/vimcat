@@ -129,17 +129,10 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   assert(out != NULL);
   assert(pid != NULL);
   assert(filename != NULL);
+  assert(columns >= 80 && "missing min clamping in vimcat_read?");
   assert(columns <= 10000 && "Vim will not render this many columns");
+  assert(rows >= 1 && "missing min clamping in vimcat_read?");
   assert(rows <= 999 && "Vim will not render this many rows");
-
-  // we need one extra row for the Vim statusline
-  ++rows;
-
-  // bump the terminal dimensions if they are likely to confuse or impede Vim
-  if (rows < 2)
-    rows = 2;
-  if (columns < 80)
-    columns = 80;
 
   // clamp the top row to a legal value
   if (top_row == 0)
@@ -299,6 +292,15 @@ int vimcat_read(const char *filename,
     goto done;
 
   DEBUG("%s has %zu rows and %zu columns", filename, rows, columns);
+
+  // we need one extra row for the Vim statusline
+  ++rows;
+
+  // bump the terminal dimensions if they are likely to confuse or impede Vim
+  if (rows < 2)
+    rows = 2;
+  if (columns < 80)
+    columns = 80;
 
   // Vim has a hard limit of 10000 columns, so if the file is wider than that we
   // just let anything beyond this be invisible
