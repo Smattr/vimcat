@@ -2,7 +2,6 @@
 Vimcat test suite
 """
 
-import platform
 import pytest
 import subprocess
 from pathlib import Path
