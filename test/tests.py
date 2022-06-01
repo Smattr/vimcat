@@ -4,6 +4,7 @@ Vimcat test suite
 
 import pytest
 import subprocess
+import tempfile
 from pathlib import Path
 
 @pytest.mark.parametrize("case", (
@@ -33,6 +34,31 @@ def test_newline(case: str):
     reference += "\n"
 
   assert output == reference, "incorrect newline handling"
+
+@pytest.mark.xfail(strict=True)
+def test_tall():
+  """
+  check displaying a file that exceeds Vim’s 1000 line limit
+  """
+
+  with tempfile.TemporaryDirectory() as tmp:
+    sample = Path(tmp) / "input.txt"
+
+    # setup a file with many lines
+    with open(sample, "wt") as f:
+      for i in range(1024):
+        f.write(f"line {i}\n")
+
+    # ask `vimcat` to display it
+    output = subprocess.check_output(["vimcat", "--debug", sample],
+                                     universal_newlines=True)
+
+  # confirm we got what we expected
+  i = 0
+  for line in output.splitlines():
+    assert line == f"line {i}", f"incorrect output at line {i + 1}"
+    i += 1
+  assert i == 1024, "incorrect total number of lines"
 
 @pytest.mark.parametrize("case", (
   "utf-8.txt",
