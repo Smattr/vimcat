@@ -118,7 +118,7 @@ static bool utf8eq(utf8_t u, const char *s) {
 typedef struct {
   union {
     char *pointer;
-    char value[3];
+    utf8_t value;
   };
   bool is_pointer; ///< is the grapheme in the `.pointer` member?
 } grapheme_t;
@@ -131,7 +131,7 @@ static bool grapheme_is_nul(const grapheme_t *g) {
     return strcmp(g->pointer, "") == 0;
   }
 
-  return g->value[0] == '\0';
+  return utf8eq(g->value, "");
 }
 
 static int grapheme_put(const grapheme_t *g, FILE *f) {
@@ -143,7 +143,8 @@ static int grapheme_put(const grapheme_t *g, FILE *f) {
       return errno;
 
   } else {
-    if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value), g->value) < 0))
+    if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value.bytes),
+                         g->value.bytes) < 0))
       return errno;
   }
 
@@ -749,18 +750,7 @@ int term_send(term_t *t, FILE *from) {
 
       // TODO combining marks
 
-      // if this grapheme fits in 3 characters, no need to dynamically allocate
-      // it
-      if (LIKELY(u.bytes[3] == '\0')) {
-        memcpy(cell->grapheme.value, u.bytes, sizeof(cell->grapheme.value));
-
-      } else {
-        cell->grapheme.pointer = strndup(u.bytes, sizeof(u.bytes));
-        if (UNLIKELY(cell->grapheme.pointer == NULL))
-          return ENOMEM;
-
-        cell->grapheme.is_pointer = true;
-      }
+      cell->grapheme.value = u;
     }
 
     // advance our cell position
