@@ -110,28 +110,29 @@ typedef struct {
 } utf8_t;
 
 static bool utf8eq(utf8_t u, const char *s) {
-  return strncmp(u.bytes, s, sizeof(u.bytes)) == 0;
+  return strlen(s) <= sizeof(u.bytes) &&
+         strncmp(u.bytes, s, sizeof(u.bytes)) == 0;
 }
 
 /// a grapheme, stored either inline as a ≤3-byte sequence or as a pointer to
 /// a heap-allocated NUL-terminated string
 typedef struct {
-  uintptr_t is_pointer : 1; ///< is the grapheme in the `.pointer` member?
   union {
-    uintptr_t pointer : sizeof(uintptr_t) * 8 - 1;
-    char value[3];
+    char *pointer;
+    utf8_t value;
   };
+  bool is_pointer; ///< is the grapheme in the `.pointer` member?
 } grapheme_t;
 
 static bool grapheme_is_nul(const grapheme_t *g) {
   assert(g != NULL);
 
   if (g->is_pointer) {
-    assert(g->pointer != 0);
-    return strcmp((const char *)(uintptr_t)g->pointer, "") == 0;
+    assert(g->pointer != NULL);
+    return strcmp(g->pointer, "") == 0;
   }
 
-  return g->value[0] == '\0';
+  return utf8eq(g->value, "");
 }
 
 static int grapheme_put(const grapheme_t *g, FILE *f) {
@@ -139,11 +140,12 @@ static int grapheme_put(const grapheme_t *g, FILE *f) {
   assert(f != NULL);
 
   if (g->is_pointer) {
-    if (UNLIKELY(fputs((void *)(uintptr_t)g->pointer, f) == EOF))
+    if (UNLIKELY(fputs(g->pointer, f) == EOF))
       return errno;
 
   } else {
-    if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value), g->value) < 0))
+    if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value.bytes),
+                         g->value.bytes) < 0))
       return errno;
   }
 
@@ -154,7 +156,7 @@ static void grapheme_free(grapheme_t *g) {
   assert(g != NULL);
 
   if (g->is_pointer)
-    free((void *)(uintptr_t)g->pointer);
+    free(g->pointer);
   memset(g, 0, sizeof(*g));
 }
 
@@ -749,18 +751,7 @@ int term_send(term_t *t, FILE *from) {
 
       // TODO combining marks
 
-      // if this grapheme fits in 3 characters, no need to dynamically allocate
-      // it
-      if (LIKELY(u.bytes[3] == '\0')) {
-        memcpy(cell->grapheme.value, u.bytes, sizeof(cell->grapheme.value));
-
-      } else {
-        cell->grapheme.pointer = (uintptr_t)strndup(u.bytes, sizeof(u.bytes));
-        if (UNLIKELY(cell->grapheme.pointer == 0))
-          return ENOMEM;
-
-        cell->grapheme.is_pointer = true;
-      }
+      cell->grapheme.value = u;
     }
 
     // advance our cell position
