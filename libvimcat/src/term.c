@@ -110,7 +110,8 @@ typedef struct {
 } utf8_t;
 
 static bool utf8eq(utf8_t u, const char *s) {
-  return strncmp(u.bytes, s, sizeof(u.bytes)) == 0;
+  return strlen(s) <= sizeof(u.bytes) &&
+         strncmp(u.bytes, s, sizeof(u.bytes)) == 0;
 }
 
 /// a grapheme, stored either inline as a ≤3-byte sequence or as a pointer to
