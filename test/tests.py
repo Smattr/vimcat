@@ -49,7 +49,6 @@ def test_no_file():
   assert p.stdout == b"", "output for non-existent file"
   assert p.stderr != b"", "no error message for non-existent file"
 
-@pytest.mark.xfail(strict=True)
 def test_tall():
   """
   check displaying a file that exceeds Vim’s 1000 line limit
