@@ -251,6 +251,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   if (UNLIKELY(((rc = posix_spawnp(&p, argv[0], &actions, NULL,
                                    (char *const *)argv, get_environ())))))
     goto done;
+  DEBUG("vim is PID %ld", (long)p);
 
   // success
   *out = output;
