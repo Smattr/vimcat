@@ -229,7 +229,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
                    top_row);
 
     APPEND(call_cursor);
-    APPEND("+z"); // scroll cursor row to the top of the buffer
+    APPEND("+normal! z\r"); // scroll cursor row to the top of the buffer
 
     DEBUG("running Vim with '+set lines=%zu', '+set columns=%zu', '+call "
           "cursor(%zu,1)' on %s",
