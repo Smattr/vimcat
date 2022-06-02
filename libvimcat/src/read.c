@@ -358,6 +358,7 @@ int vimcat_read(const char *filename,
       (void)fclose(vim_stdout);
       vim_stdout = NULL;
 
+      DEBUG("waiting for Vim to exit...");
       int status;
       if (UNLIKELY(waitpid(vim, &status, 0) < 0)) {
         if (rc == 0) {
