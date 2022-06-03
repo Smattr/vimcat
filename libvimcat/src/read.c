@@ -347,6 +347,12 @@ int vimcat_read(const char *filename,
     // drain Vim’s output into the virtual terminal
     rc = term_send(term, vim_stdout);
 
+    // if we failed to drain the entire output, discard the rest now
+    if (UNLIKELY(rc != 0)) {
+      while (getc(vim_stdout) != EOF)
+        ;
+    }
+
     // clean up after Vim
     {
       (void)fclose(vim_stdout);
