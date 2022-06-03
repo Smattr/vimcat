@@ -469,6 +469,18 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
     t->style.custom_bg = false;
     break;
 
+  // we do not support the aixterm extensions, so map the bright colours to
+  // their elaborated form
+  case 90 ... 97:
+    t->style.bold = true;
+    t->style.fg = entry - 90;
+    break;
+
+  case 100 ... 107:
+    t->style.bold = true;
+    t->style.bg = entry - 100;
+    break;
+
   default:
     DEBUG("unsupported SGR attribute <esc>[%zum", entry);
     return ENOTSUP;
