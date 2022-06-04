@@ -246,11 +246,26 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
 
 #undef APPEND
 
+#ifndef NDEBUG
+  {
+    size_t commands = 0;
+    for (size_t i = 0; i < sizeof(argv) / sizeof(argv[0]); ++i) {
+      assert(argv[i] != NULL);
+      if (argv[i][0] == '+')
+        ++commands;
+      if (strcmp(argv[i], "--") == 0)
+        break;
+    }
+    assert(commands <= 10 && "too many commands for Vim to handle");
+  }
+#endif
+
   // spawn Vim
   pid_t p = 0;
   if (UNLIKELY(((rc = posix_spawnp(&p, argv[0], &actions, NULL,
                                    (char *const *)argv, get_environ())))))
     goto done;
+  DEBUG("vim is PID %ld", (long)p);
 
   // success
   *out = output;
@@ -346,11 +361,18 @@ int vimcat_read(const char *filename,
     // drain Vim’s output into the virtual terminal
     rc = term_send(term, vim_stdout);
 
+    // if we failed to drain the entire output, discard the rest now
+    if (UNLIKELY(rc != 0)) {
+      while (getc(vim_stdout) != EOF)
+        ;
+    }
+
     // clean up after Vim
     {
       (void)fclose(vim_stdout);
       vim_stdout = NULL;
 
+      DEBUG("waiting for Vim to exit...");
       int status;
       if (UNLIKELY(waitpid(vim, &status, 0) < 0)) {
         if (rc == 0) {
