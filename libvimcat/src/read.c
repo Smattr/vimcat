@@ -246,6 +246,20 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
 
 #undef APPEND
 
+#ifndef NDEBUG
+  {
+    size_t commands = 0;
+    for (size_t i = 0; i < sizeof(argv) / sizeof(argv[0]); ++i) {
+      assert(argv[i] != NULL);
+      if (argv[i][0] == '+')
+        ++commands;
+      if (strcmp(argv[i], "--") == 0)
+        break;
+    }
+    assert(commands <= 10 && "too many commands for Vim to handle");
+  }
+#endif
+
   // spawn Vim
   pid_t p = 0;
   if (UNLIKELY(((rc = posix_spawnp(&p, argv[0], &actions, NULL,
