@@ -49,9 +49,18 @@ def test_no_file():
   assert p.stdout == b"", "output for non-existent file"
   assert p.stderr != b"", "no error message for non-existent file"
 
-def test_tall():
+VIM_LINE_LIMIT = 1000
+"""
+maximum number of terminal lines Vim will render
+"""
+
+@pytest.mark.parametrize("height",
+  list(range(VIM_LINE_LIMIT - 2, VIM_LINE_LIMIT + 3)) +
+  list(range(2 * VIM_LINE_LIMIT - 2, 2 * VIM_LINE_LIMIT + 3))
+)
+def test_tall(height: int):
   """
-  check displaying a file that exceeds Vim’s 1000 line limit
+  check displaying a file near the boundaries of Vim’s line limit
   """
 
   with tempfile.TemporaryDirectory() as tmp:
@@ -59,7 +68,7 @@ def test_tall():
 
     # setup a file with many lines
     with open(sample, "wt") as f:
-      for i in range(1024):
+      for i in range(height):
         f.write(f"line {i}\n")
 
     # ask `vimcat` to display it
@@ -71,7 +80,7 @@ def test_tall():
   for line in output.splitlines():
     assert line == f"line {i}", f"incorrect output at line {i + 1}"
     i += 1
-  assert i == 1024, "incorrect total number of lines"
+  assert i == height, "incorrect total number of lines"
 
 @pytest.mark.parametrize("case", (
   "utf-8.txt",
