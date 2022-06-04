@@ -35,6 +35,20 @@ def test_newline(case: str):
 
   assert output == reference, "incorrect newline handling"
 
+def test_no_file():
+  """
+  passing a non-existent file should produce no output and an error message
+  """
+
+  with tempfile.TemporaryDirectory() as tmp:
+    input = Path(tmp) / "no-file.txt"
+
+    p = subprocess.run(["vimcat", input], capture_output=True)
+
+  assert p.returncode != 0, "EXIT_SUCCESS status with non-existent file"
+  assert p.stdout == b"", "output for non-existent file"
+  assert p.stderr != b"", "no error message for non-existent file"
+
 @pytest.mark.xfail(strict=True)
 def test_tall():
   """
