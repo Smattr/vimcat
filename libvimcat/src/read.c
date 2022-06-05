@@ -195,7 +195,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   (void)snprintf(set_columns, sizeof(set_columns), "+set columns=%zu", columns);
 
   // prefix of the command we will run
-  enum { ARGS = 17 };
+  enum { ARGS = 16 };
   char const *argv[ARGS] = {
       "vim",
       "-R",                // read-only mode
@@ -222,17 +222,16 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
     assert(arg_index < ARGS && "exceeding allocated Vim arguments");           \
   } while (0)
 
-  // if we need to jump to a later row, construct Vim parameters for this
-  char call_cursor[sizeof("+call cursor(,1)") + 20];
+  // if we need to jump to a later row, construct Vim parameters to move there
+  // and scroll the window such that this line is at the top
+  char jump[sizeof("+normal! Gz\r") + 20];
   if (top_row > 1) {
-    (void)snprintf(call_cursor, sizeof(call_cursor), "+call cursor(%zu,1)",
-                   top_row);
+    (void)snprintf(jump, sizeof(jump), "+normal! %zuGz\r", top_row);
 
-    APPEND(call_cursor);
-    APPEND("+normal! z\r"); // scroll cursor row to the top of the buffer
+    APPEND(jump);
 
-    DEBUG("running Vim with '+set lines=%zu', '+set columns=%zu', '+call "
-          "cursor(%zu,1)' on %s",
+    DEBUG("running Vim with '+set lines=%zu', '+set columns=%zu', '+normal! "
+          "%zuGz<CR>' on %s",
           rows, columns, top_row, filename);
   } else {
     DEBUG("running Vim with '+set lines=%zu', '+set columns=%zu' on %s", rows,
