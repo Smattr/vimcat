@@ -195,7 +195,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   (void)snprintf(set_columns, sizeof(set_columns), "+set columns=%zu", columns);
 
   // prefix of the command we will run
-  enum { ARGS = 16 };
+  enum { ARGS = 17 };
   char const *argv[ARGS] = {
       "vim",
       "-R",                // read-only mode
@@ -205,6 +205,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
       "+set laststatus=0", // hide status footer line
       "+set noruler",      // hide row,column position footer
       "+set nowrap",       // disable text wrapping in case we have long rows
+      "+set scrolloff=0",  // make `z<CR>` scroll cursor row to the top
       set_rows,
       set_columns,
   };
