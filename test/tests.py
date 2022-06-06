@@ -7,6 +7,41 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+VIM_COLUMN_LIMIT = 10000
+"""
+maximum number of terminal columns Vim will render
+"""
+
+@pytest.mark.xfail(strict=True)
+def test_combining_characters():
+  """
+  UTF-8 combining characters should be rendered in the correct terminal cell
+  """
+
+  # We cannot directly read the virtual terminal interface through `vimcat` and
+  # we cannot distinguish which column a given character we receive came from.
+  # So we use a trick where we stick the combining character just across the
+  # border of the maximum column Vim will render to. So if we get the combining
+  # right, this should be visible, and if not it will be invisible.
+
+  with tempfile.TemporaryDirectory() as tmp:
+    sample = Path(tmp) / "input.txt"
+
+    # write a file containing a trailing combining character
+    with open(sample, "wb") as f:
+      for _ in range(VIM_COLUMN_LIMIT - 1):
+        f.write(b" ")
+      f.write(b"e")
+      f.write(b"\xcc\x81")
+
+    # ask `vimcat` to render it
+    output = subprocess.check_output(["vimcat", "--debug", sample])
+
+  prefix = b" " * (VIM_COLUMN_LIMIT - 1)
+  assert output.startswith(prefix), "incorrect leading space"
+
+  assert output[len(prefix):] == b"e\xcc\x81\n", "truncated combining character"
+
 @pytest.mark.parametrize("case", (
   "newline1.txt",
   "newline2.txt",
@@ -109,11 +144,6 @@ def test_utf8(case: str):
   # highlighting of basic text files is enabled
   assert output.strip() == reference, "incorrect UTF-8 decoding"
 
-VIM_COLUMN_LIMIT = 10000
-"""
-maximum number of terminal columns Vim will render
-"""
-
 @pytest.mark.parametrize("width",
   list(range(VIM_COLUMN_LIMIT - 2, VIM_COLUMN_LIMIT + 3)))
 def test_wide(width: int):
@@ -135,5 +165,9 @@ def test_wide(width: int):
                                      universal_newlines=True)
 
   # confirm we got at least as many columns as expected
-  reference = "a" * min(width, VIM_COLUMN_LIMIT)
-  assert output.startswith(reference), "incorrect wide line rendering"
+  if width <= VIM_COLUMN_LIMIT:
+    reference = "a" * width + "\n"
+    assert output == reference, "incorrect wide line rendering"
+  else:
+    reference = "a" * VIM_COLUMN_LIMIT
+    assert output.startswith(reference), "incorrect wide line rendering"
