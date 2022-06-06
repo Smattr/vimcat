@@ -108,3 +108,32 @@ def test_utf8(case: str):
   # `vimcat` should have given us the same, under the assumption no syntax
   # highlighting of basic text files is enabled
   assert output.strip() == reference, "incorrect UTF-8 decoding"
+
+VIM_COLUMN_LIMIT = 10000
+"""
+maximum number of terminal columns Vim will render
+"""
+
+@pytest.mark.parametrize("width",
+  list(range(VIM_COLUMN_LIMIT - 2, VIM_COLUMN_LIMIT + 3)))
+def test_wide(width: int):
+  """
+  at least as many columns as the Vim render limit should be displayed
+  """
+
+  with tempfile.TemporaryDirectory() as tmp:
+    sample = Path(tmp) / "input.txt"
+
+    # setup a file with a wide line:
+    with open(sample, "wt") as f:
+      for _ in range(width):
+        f.write("a")
+      f.write("\n")
+
+    # ask `vimcat` to display it
+    output = subprocess.check_output(["vimcat", "--debug", sample],
+                                     universal_newlines=True)
+
+  # confirm we got at least as many columns as expected
+  reference = "a" * min(width, VIM_COLUMN_LIMIT)
+  assert output.startswith(reference), "incorrect wide line rendering"
