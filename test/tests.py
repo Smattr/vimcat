@@ -135,5 +135,9 @@ def test_wide(width: int):
                                      universal_newlines=True)
 
   # confirm we got at least as many columns as expected
-  reference = "a" * min(width, VIM_COLUMN_LIMIT)
-  assert output.startswith(reference), "incorrect wide line rendering"
+  if width <= VIM_COLUMN_LIMIT:
+    reference = "a" * width + "\n"
+    assert output == reference, "incorrect wide line rendering"
+  else:
+    reference = "a" * VIM_COLUMN_LIMIT
+    assert output.startswith(reference), "incorrect wide line rendering"
