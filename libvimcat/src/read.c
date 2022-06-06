@@ -132,7 +132,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   assert(columns >= 80 && "missing min clamping in vimcat_read?");
   assert(columns <= 10000 && "Vim will not render this many columns");
   assert(rows >= 1 && "missing min clamping in vimcat_read?");
-  assert(rows <= 999 && "Vim will not render this many rows");
+  assert(rows <= 1000 && "Vim will not render this many rows");
 
   // clamp the top row to a legal value
   if (top_row == 0)
@@ -205,6 +205,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
       "+set laststatus=0", // hide status footer line
       "+set noruler",      // hide row,column position footer
       "+set nowrap",       // disable text wrapping in case we have long rows
+      "+set scrolloff=0",  // make `z<CR>` scroll cursor row to the top
       set_rows,
       set_columns,
   };
@@ -222,17 +223,16 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
     assert(arg_index < ARGS && "exceeding allocated Vim arguments");           \
   } while (0)
 
-  // if we need to jump to a later row, construct Vim parameters for this
-  char call_cursor[sizeof("+call cursor(,1)") + 20];
+  // if we need to jump to a later row, construct Vim parameters to move there
+  // and scroll the window such that this line is at the top
+  char jump[sizeof("+normal! Gz\r") + 20];
   if (top_row > 1) {
-    (void)snprintf(call_cursor, sizeof(call_cursor), "+call cursor(%zu,1)",
-                   top_row);
+    (void)snprintf(jump, sizeof(jump), "+normal! %zuGz\r", top_row);
 
-    APPEND(call_cursor);
-    APPEND("+z"); // scroll cursor row to the top of the buffer
+    APPEND(jump);
 
-    DEBUG("running Vim with '+set lines=%zu', '+set columns=%zu', '+call "
-          "cursor(%zu,1)' on %s",
+    DEBUG("running Vim with '+set lines=%zu', '+set columns=%zu', '+normal! "
+          "%zuGz<CR>' on %s",
           rows, columns, top_row, filename);
   } else {
     DEBUG("running Vim with '+set lines=%zu', '+set columns=%zu' on %s", rows,
@@ -308,32 +308,38 @@ int vimcat_read(const char *filename,
 
   DEBUG("%s has %zu rows and %zu columns", filename, rows, columns);
 
+  size_t term_rows = rows;
+  size_t term_columns = columns;
+
   // we need one extra row for the Vim statusline
-  ++rows;
+  ++term_rows;
 
   // bump the terminal dimensions if they are likely to confuse or impede Vim
-  if (rows < 2)
-    rows = 2;
-  if (columns < 80)
-    columns = 80;
+  if (term_rows < 2) {
+    DEBUG("clamping terminal rows from %zu to 2", term_rows);
+    term_rows = 2;
+  }
+  if (term_columns < 80) {
+    DEBUG("clamping terminal columns from %zu to 80", term_columns);
+    term_columns = 80;
+  }
 
   // Vim has a hard limit of 10000 columns, so if the file is wider than that we
   // just let anything beyond this be invisible
-  if (UNLIKELY(columns > 10000)) {
-    DEBUG("clamping %zu columns to 10000", columns);
-    columns = 10000;
+  if (UNLIKELY(term_columns > 10000)) {
+    DEBUG("clamping terminal columns from %zu to 10000", term_columns);
+    term_columns = 10000;
   }
 
   // Vim has a hard limit of 1000 rows, so subtract 1 for the statusline and
   // move in chunks of 999 rows if we have a file taller than this
-  size_t term_rows = rows;
   if (term_rows > 1000) {
     DEBUG("clamping terminal rows from %zu to 1000", term_rows);
     term_rows = 1000;
   }
 
   // create a virtual terminal
-  if (UNLIKELY((rc = term_new(&term, columns, term_rows))))
+  if (UNLIKELY((rc = term_new(&term, term_columns, term_rows))))
     goto done;
 
   for (size_t row = 1; row <= rows;) {
@@ -351,8 +357,8 @@ int vimcat_read(const char *filename,
     // ask Vim to render the file
     FILE *vim_stdout = NULL;
     pid_t vim = 0;
-    if (UNLIKELY((
-            rc = run_vim(&vim_stdout, &vim, filename, vim_rows, columns, row))))
+    if (UNLIKELY((rc = run_vim(&vim_stdout, &vim, filename, term_rows,
+                               term_columns, row))))
       goto done;
 
     assert(vim_stdout != NULL && "invalid stream for Vim’s output");

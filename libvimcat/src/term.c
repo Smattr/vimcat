@@ -469,6 +469,18 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
     t->style.custom_bg = false;
     break;
 
+  // we do not support the aixterm extensions, so map the bright colours to
+  // their elaborated form
+  case 90 ... 97:
+    t->style.bold = true;
+    t->style.fg = entry - 90;
+    break;
+
+  case 100 ... 107:
+    t->style.bold = true;
+    t->style.bg = entry - 100;
+    break;
+
   default:
     DEBUG("unsupported SGR attribute <esc>[%zum", entry);
     return ENOTSUP;
@@ -546,6 +558,36 @@ static int process_csi(term_t *t, const char *csi) {
   }
 
   DEBUG("processing <esc>[%s", csi);
+
+  if (final == 'm') {
+
+    // is this a 256-colour foreground switch?
+    bool is_256_fg = strncmp(csi, "38;5;", strlen("38;5;")) == 0;
+    if (is_256_fg) {
+      const char *idm = csi + strlen("38;5;");
+
+      // 0-7?
+      if (idm[0] >= '0' && idm[0] < '8' && idm[1] == 'm') {
+        size_t equiv_8 = idm[0] - '0' + 30;
+        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
+        return process_m(t, 0, false, equiv_8);
+      }
+
+      // 8-9?
+      if (isdigit(idm[0]) && idm[1] == 'm') {
+        size_t equiv_8 = idm[0] - '8' + 90;
+        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
+        return process_m(t, 0, false, equiv_8);
+      }
+
+      // 10-15?
+      if (idm[0] == '1' && idm[1] >= '0' && idm[1] < '6' && idm[2] == 'm') {
+        size_t equiv_8 = idm[1] - '0' + 92;
+        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
+        return process_m(t, 0, false, equiv_8);
+      }
+    }
+  }
 
   // process ';' separated entries
   size_t index = 0;
