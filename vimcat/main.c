@@ -1,3 +1,4 @@
+#include "help.h"
 #include <errno.h>
 #include <getopt.h>
 #include <stdbool.h>
@@ -45,8 +46,7 @@ int main(int argc, char **argv) {
       break;
 
     case 'h': // --help
-      fprintf(stderr, "usage: %s [--debug] [filename1 [filename2 [...]]]\n",
-              argv[0]);
+      help();
       return EXIT_SUCCESS;
 
     case 'v': // --version

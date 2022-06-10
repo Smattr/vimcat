@@ -1,5 +1,17 @@
-add_executable(vimcat main.c)
+add_executable(vimcat
+  help.c
+  main.c
+  ${CMAKE_CURRENT_BINARY_DIR}/manpage.c
+)
 target_link_libraries(vimcat PRIVATE libvimcat)
+
+find_program(XXD xxd REQUIRED)
+add_custom_command(
+  OUTPUT manpage.c
+  COMMAND ${XXD} -include vimcat.1 ${CMAKE_CURRENT_BINARY_DIR}/manpage.c
+  MAIN_DEPENDENCY vimcat.1
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 find_program(GZIP gzip REQUIRED)
 add_custom_target(man-vimcat
