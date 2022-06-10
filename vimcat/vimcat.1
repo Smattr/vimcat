@@ -2,7 +2,7 @@
 .SH NAME
 vimcat \- Concatenate files with vim-provided syntax highlighting
 .SH SYNOPSIS
-.B \fBvimcat\fR [\fB--debug\fR] [\fIFILE\fR]...
+.B \fBvimcat\fR [\fIOPTION\fR]... [\fIFILE\fR]...
 .SH DESCRIPTION
 \fBvimcat\fR works like \fBcat\fR but uses ANSI terminal escape sequences to
 syntax-highlight printed text as \fBvim\fR would.
@@ -12,12 +12,18 @@ your vimrc, ftdetect rules, after/syntax tweaks, ... \fBvimcat\fR quite
 literally runs \fBvim\fR to display the given files and then renders the result
 in your terminal.
 .SH OPTIONS
-\fB--debug\fR
+\fB-d\fR, \fB--debug\fR
 .RS
 Enable debugging output. This is generally only useful when debugging
 \fBvimcat\fR itself. However you may find some of your vimrc settings cause an
 unintended effect or deadlock, in which case this flag may help you discover
 which configuration line is to blame.
+.RE
+.PP
+\fB-v\fR, \fB--version\fR
+.RS
+Output version information and exit. Note that the version information is the
+version of the underlying libvimcat that \fBvimcat\fR is linked to.
 .RE
 .SH AUTHOR
 All comments, questions and complaints should be directed to Matthew Fernandez
