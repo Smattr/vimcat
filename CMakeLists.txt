@@ -9,6 +9,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wwrite-strings -Wmissing-prototypes -Wshadow")
 
+# asprintf
+add_definitions(-D_GNU_SOURCE)
+
 # enable --as-needed, present on GNU ld on Linux, to minimise dependencies
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
