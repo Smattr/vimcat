@@ -148,8 +148,10 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
 
   // create a pipe on which we can receive Vim’s rendering of the file
   int fd[2] = {-1, -1};
-  if (UNLIKELY((rc = pipe(fd))))
+  if (UNLIKELY(pipe(fd) < 0)) {
+    rc = errno;
     goto done;
+  }
 
   // set close-on-exec on the read end which the child (Vim) does not need
   {
