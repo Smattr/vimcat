@@ -144,6 +144,12 @@ def test_utf8(case: str):
   # highlighting of basic text files is enabled
   assert output.strip() == reference, "incorrect UTF-8 decoding"
 
+def test_version_le():
+  """
+  version comparison API should behave as expected
+  """
+  subprocess.check_call(["test_version_le"])
+
 @pytest.mark.parametrize("width",
   list(range(VIM_COLUMN_LIMIT - 2, VIM_COLUMN_LIMIT + 3)))
 def test_wide(width: int):

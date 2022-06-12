@@ -10,18 +10,25 @@ import re
 import shutil
 import subprocess as sp
 import sys
-from typing import Optional
+from typing import Iterator, Optional
+
+def all_versions() -> Iterator[str]:
+  """
+  All known versions in the CHANGELOG.rst.
+  """
+  with open(Path(__file__).parent / "../../CHANGELOG.rst", "rt") as f:
+    for line in f:
+      m = re.match(r"(v\d{4}\.\d{2}\.\d{2})$", line)
+      if m is not None:
+        yield m.group(1)
 
 def last_release() -> str:
   """
   The version of the last release. This will be used as the version number if no
   Git information is available.
   """
-  with open(Path(__file__).parent / "../../CHANGELOG.rst", "rt") as f:
-    for line in f:
-      m = re.match(r"(v\d{4}\.\d{2}\.\d{2})$", line)
-      if m is not None:
-        return m.group(1)
+  for version in all_versions():
+    return version
 
   return "<unknown>"
 
@@ -114,11 +121,23 @@ def main(args: [str]) -> int:
   if version is None:
     version = last_release()
 
-  new =  '#include <vimcat/version.h>\n' \
-         '\n' \
-         'const char *vimcat_version(void) {\n' \
-        f'  return "{version}";\n' \
-         '}'
+  known_versions = ", ".join(f'"{v}"' for v in reversed(list(all_versions())))
+
+  new =  '#include <stddef.h>\n'                                               \
+         '#include <vimcat/version.h>\n'                                       \
+         '\n'                                                                  \
+         'const char *vimcat_version(void) {\n'                                \
+        f'  return "{version}";\n'                                             \
+         '}\n'                                                                 \
+         '\n'                                                                  \
+         '#define INTERNAL __attribute__((visibility("internal")))\n'          \
+         '\n'                                                                  \
+         'const char *KNOWN_VERSIONS[] INTERNAL = {\n'                         \
+        f'  {known_versions}\n'                                                \
+         '};\n'                                                                \
+         '\n'                                                                  \
+         'size_t KNOWN_VERSIONS_LENGTH INTERNAL =\n'                           \
+         '  sizeof(KNOWN_VERSIONS) / sizeof(KNOWN_VERSIONS[0]);'
 
   # If the version has changed, update the output. Otherwise we leave the old
   # contents – and more importantly, the timestamp – intact.
