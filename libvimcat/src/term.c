@@ -114,24 +114,15 @@ static bool utf8eq(utf8_t u, const char *s) {
          strncmp(u.bytes, s, sizeof(u.bytes)) == 0;
 }
 
-/// a grapheme, stored either inline as a ≤3-byte sequence or as a pointer to
-/// a heap-allocated NUL-terminated string
+/// A grapheme, stored as a single UTF-8 character. Note that this
+/// representation does not account for non-spacing combining marks, a
+/// weakness we accept for the sake of efficiency.
 typedef struct {
-  union {
-    char *pointer;
     utf8_t value;
-  };
-  bool is_pointer; ///< is the grapheme in the `.pointer` member?
 } grapheme_t;
 
 static bool grapheme_is_nul(const grapheme_t *g) {
   assert(g != NULL);
-
-  if (g->is_pointer) {
-    assert(g->pointer != NULL);
-    return strcmp(g->pointer, "") == 0;
-  }
-
   return utf8eq(g->value, "");
 }
 
@@ -139,24 +130,15 @@ static int grapheme_put(const grapheme_t *g, FILE *f) {
   assert(g != NULL);
   assert(f != NULL);
 
-  if (g->is_pointer) {
-    if (UNLIKELY(fputs(g->pointer, f) == EOF))
-      return errno;
-
-  } else {
     if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value.bytes),
                          g->value.bytes) < 0))
       return errno;
-  }
 
   return 0;
 }
 
 static void grapheme_free(grapheme_t *g) {
   assert(g != NULL);
-
-  if (g->is_pointer)
-    free(g->pointer);
   memset(g, 0, sizeof(*g));
 }
 
@@ -790,9 +772,6 @@ int term_send(term_t *t, FILE *from) {
     if (!utf8eq(u, "\n") && !utf8eq(u, "\r\n")) {
 
       cell->style = t->style;
-
-      // TODO combining marks
-
       cell->grapheme.value = u;
     }
 
