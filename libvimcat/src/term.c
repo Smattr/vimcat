@@ -118,7 +118,7 @@ static bool utf8eq(utf8_t u, const char *s) {
 /// representation does not account for non-spacing combining marks, a
 /// weakness we accept for the sake of efficiency.
 typedef struct {
-    utf8_t value;
+  utf8_t value;
 } grapheme_t;
 
 static bool grapheme_is_nul(const grapheme_t *g) {
@@ -130,9 +130,9 @@ static int grapheme_put(const grapheme_t *g, FILE *f) {
   assert(g != NULL);
   assert(f != NULL);
 
-    if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value.bytes),
-                         g->value.bytes) < 0))
-      return errno;
+  if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value.bytes), g->value.bytes) <
+               0))
+    return errno;
 
   return 0;
 }

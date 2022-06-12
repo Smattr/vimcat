@@ -1,8 +1,8 @@
-#include <vimcat/version.h>
-#include <stdbool.h>
 #include "compiler.h"
-#include <string.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
+#include <vimcat/version.h>
 
 extern const char *KNOWN_VERSIONS[] INTERNAL;
 extern size_t KNOWN_VERSIONS_LENGTH INTERNAL;

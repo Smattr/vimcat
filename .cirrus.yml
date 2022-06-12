@@ -12,6 +12,7 @@ task:
         CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: pkg upgrade -y && pkg install -y cmake py38-pytest vim
+      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
 
     - name: Linux
       container:
@@ -23,6 +24,7 @@ task:
         PATH: /opt/cmake-3.21.1-linux-x86_64/bin:${PATH}
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: apt-get update && apt-get install --no-install-recommends -y python3-pytest vim && wget https://github.com/Kitware/CMake/releases/download/v3.21.1/cmake-3.21.1-linux-x86_64.tar.gz && mkdir -p /opt && tar xvf cmake-3.21.1-linux-x86_64.tar.gz --directory /opt
+      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
 
     - name: macOS
       osx_instance:
@@ -31,5 +33,9 @@ task:
         CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: pip3 install pytest
+      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
 
-  test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
+    - name: clang-format
+      container:
+        image: silkeh/clang:14
+      test_script: git ls-files -z '**/*.c' '**/*.h' | xargs -0 -- clang-format --dry-run --style=file --Werror
