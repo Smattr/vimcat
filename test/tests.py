@@ -9,14 +9,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-@pytest.mark.parametrize("colour", (
-  None,
-  pytest.param("always", marks=pytest.mark.xfail(strict=True)),
-  pytest.param("auto", marks=pytest.mark.xfail(strict=True)),
-  pytest.param("never", marks=pytest.mark.xfail(strict=True))))
-@pytest.mark.parametrize("no_color", (
-  False,
-  pytest.param(True, marks=pytest.mark.xfail(strict=True))))
+@pytest.mark.parametrize("colour", (None, "always", "auto", "never"))
+@pytest.mark.parametrize("no_color", (False, True))
 def test_colour(colour: Optional[str], no_color: bool):
   """
   `vimcat` should obey the user’s colour preferences

@@ -12,6 +12,16 @@ your vimrc, ftdetect rules, after/syntax tweaks, ... \fBvimcat\fR quite
 literally runs \fBvim\fR to display the given files and then renders the result
 in your terminal.
 .SH OPTIONS
+\fB-c\fR \fIwhen\fR, \fB--color=\fR\fIwhen\fR, \fB--color=\fR\fIwhen\fR
+.RS
+Control whether output is printed with syntax highlighting or without. Possible
+values of \fIwhen\fR are \fBalways\fR, \fBauto\fR, and \fBnever\fR. When
+\fBauto\fR is used (the default), the \fBNO_COLOR\fR environment variable will
+also be checked to see if colour should be disabled. In contrast to many other
+tools, \fBvimcat\fR does not consider whether stdout is a TTY but rather assumes
+colour is generally desired.
+.RE
+.PP
 \fB-d\fR, \fB--debug\fR
 .RS
 Enable debugging output. This is generally only useful when debugging
