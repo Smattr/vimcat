@@ -9,6 +9,11 @@
 /// Only enough functionality to support the meaningful escape sequences that
 /// Vim emits is implemented.
 ///
+/// Unicode non-spacing combining marks are not accounted for. That is, if data
+/// being printed to the terminal contains a regular character followed by a
+/// non-spacing combining mark, these will be treated as two characters,
+/// advancing the cursor position by two.
+///
 /// TODO: replace this with libtsm?
 
 #pragma once
