@@ -2,10 +2,52 @@
 Vimcat test suite
 """
 
+import os
 import pytest
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Optional
+
+@pytest.mark.parametrize("colour", (None, "always", "auto", "never"))
+@pytest.mark.parametrize("no_color", (False, True))
+def test_colour(colour: Optional[str], no_color: bool):
+  """
+  `vimcat` should obey the user’s colour preferences
+  """
+
+  env = os.environ.copy()
+  if no_color:
+    env["NO_COLOR"] = "1"
+  elif "NO_COLOR" in env:
+    del env["NO_COLOR"]
+
+  with tempfile.TemporaryDirectory() as tmp:
+
+    # write a vimrc to force syntax highlighting and 8-bit colour
+    with open(Path(tmp) / ".vimrc", "wt") as f:
+      f.write("syntax on\n"
+              "set t_Co=8\n")
+    env["HOME"] = tmp
+
+    args = ["vimcat", "--debug"]
+    if colour is not None:
+      args += [f"--colour={colour}"]
+
+    # highlight a C file
+    source = Path(__file__).parent / "test_version_le.c"
+    output = subprocess.check_output(args + ["--", source], env=env)
+
+  # was there a Control Sequence Identifier in the output?
+  contains_csi = b"\033[" in output
+
+  if colour == "auto" or colour is None:
+    assert contains_csi != no_color, "incorrect NO_COLOR handling"
+  elif colour == "always":
+    assert contains_csi, "incorrect --colour=always behaviour"
+  else:
+    assert colour == "never"
+    assert not contains_csi, "incorrect --colour=never behaviour"
 
 VIM_COLUMN_LIMIT = 10000
 """

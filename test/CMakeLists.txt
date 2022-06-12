@@ -21,4 +21,4 @@ add_custom_target(check
     PATH=${CMAKE_BINARY_DIR}/vimcat:${CMAKE_BINARY_DIR}/test:$ENV{PATH}
     ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/tests.py
     --verbose)
-add_dependencies(check vimcat)
+add_dependencies(check test_version_le vimcat)
