@@ -4,7 +4,8 @@ add_library(libvimcat
   src/get_environ.c
   src/read.c
   src/term.c
-  ${CMAKE_CURRENT_BINARY_DIR}/version.c)
+  ${CMAKE_CURRENT_BINARY_DIR}/version.c
+  src/version_le.c)
 
 if(APPLE)
   target_compile_options(libvimcat PRIVATE -fno-common)
