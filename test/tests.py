@@ -11,7 +11,14 @@ from typing import Optional
 
 @pytest.mark.parametrize("colour", (None, "always", "auto", "never"))
 @pytest.mark.parametrize("no_color", (False, True))
-def test_colour(colour: Optional[str], no_color: bool):
+@pytest.mark.parametrize("t_Co", (
+  pytest.param(2, marks=pytest.mark.xfail),
+  8,
+  16,
+  pytest.param(88, marks=pytest.mark.xfail(strict=True)),
+  pytest.param(256, marks=pytest.mark.xfail(strict=True)),
+  pytest.param(16777216, marks=pytest.mark.xfail(strict=True))))
+def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
   """
   `vimcat` should obey the user’s colour preferences
   """
@@ -27,7 +34,7 @@ def test_colour(colour: Optional[str], no_color: bool):
     # write a vimrc to force syntax highlighting and 8-bit colour
     with open(Path(tmp) / ".vimrc", "wt") as f:
       f.write("syntax on\n"
-              "set t_Co=8\n")
+              f"set t_Co={t_Co}\n")
     env["HOME"] = tmp
 
     args = ["vimcat", "--debug"]
