@@ -48,6 +48,10 @@ def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
   # was there a Control Sequence Identifier in the output?
   contains_csi = b"\033[" in output
 
+  # allow no colour in monochrome mode, as it may be unused/unsupported
+  if t_Co == 2 and not contains_csi:
+    return
+
   if colour == "auto" or colour is None:
     assert contains_csi != no_color, "incorrect NO_COLOR handling"
   elif colour == "always":
