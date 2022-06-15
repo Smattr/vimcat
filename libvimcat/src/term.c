@@ -554,6 +554,20 @@ static int process_csi(term_t *t, const char *csi) {
     return 0;
   }
 
+#ifdef __APPLE__
+  // Vim on macOS when `t_Co=2` can emit unusual sequences like `<esc>[311m`
+  // that appear to have no defined meaning. This seems to result from an
+  // incorrect call to `term_color` in Vim. I do not know if this is a Vim bug
+  // or a bug in some default configuration on macOS or simply violation of an
+  // assumption that there are no monochrome macOS environments (reasonable).
+  // Just ignore this sequence if we see it.
+  if (UNLIKELY(csi[0] == '3' && csi[1] == '1' && isdigit(csi[2]) &&
+               csi[3] == 'm')) {
+    DEBUG("ignoring <esc>[%s", csi);
+    return 0;
+  }
+#endif
+
   // check we have a known CSI
   int (*handler)(term_t * t, size_t index, bool is_default, size_t entry) =
       NULL;

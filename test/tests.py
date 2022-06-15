@@ -11,13 +11,7 @@ from typing import Optional
 
 @pytest.mark.parametrize("colour", (None, "always", "auto", "never"))
 @pytest.mark.parametrize("no_color", (False, True))
-@pytest.mark.parametrize("t_Co", (
-  pytest.param(2, marks=pytest.mark.xfail),
-  8,
-  16,
-  88,
-  256,
-  16777216))
+@pytest.mark.parametrize("t_Co", (2, 8, 16, 88, 256, 16777216))
 def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
   """
   `vimcat` should obey the user’s colour preferences
