@@ -498,32 +498,24 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
     break;
 
   case 30 ... 37:
-    t->style.custom_fg = true;
-    t->style.fg = entry - 30;
-    break;
+    return process_38_5_m(t, entry - 30);
 
   case 39:
     t->style.custom_fg = false;
     break;
 
   case 40 ... 47:
-    t->style.custom_bg = true;
-    t->style.bg = entry - 40;
-    break;
+    return process_48_5_m(t, entry - 40);
 
   case 49:
     t->style.custom_bg = false;
     break;
 
   case 90 ... 97:
-    t->style.custom_fg = true;
-    t->style.fg = entry - 90 + 8;
-    break;
+    return process_38_5_m(t, entry - 90 + 8);
 
   case 100 ... 107:
-    t->style.custom_bg = true;
-    t->style.bg = entry - 100 + 8;
-    break;
+    return process_48_5_m(t, entry - 100 + 8);
 
   default:
     DEBUG("unsupported SGR attribute <esc>[%zum", entry);
