@@ -70,14 +70,14 @@ static int style_put(style_t style, FILE *f) {
     return errno;
 
   // does this have a foreground colour that requires 256-bit?
-  if (style.custom_fg && style.fg > 7) {
+  if (style.custom_fg && style.fg > 15) {
     if (UNLIKELY(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
       return errno;
     emitted_fg = true;
   }
 
   // does this have a background colour that requires 256-bit?
-  if (style.custom_bg && style.bg > 7) {
+  if (style.custom_bg && style.bg > 15) {
     if (UNLIKELY(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
       return errno;
     emitted_bg = true;
@@ -85,9 +85,14 @@ static int style_put(style_t style, FILE *f) {
 
   if (!emitted_fg) {
     if (style.custom_fg) {
-      assert(style.fg <= 7);
-      if (UNLIKELY(fprintf(f, "%u;", 30u + style.fg) < 0))
-        return errno;
+      assert(style.fg <= 15);
+      if (style.fg <= 7) {
+        if (UNLIKELY(fprintf(f, "%u;", 30u + style.fg) < 0))
+          return errno;
+      } else {
+        if (UNLIKELY(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
+          return errno;
+      }
     } else {
       if (UNLIKELY(fputs("39;", f) == EOF))
         return errno;
@@ -96,9 +101,14 @@ static int style_put(style_t style, FILE *f) {
 
   if (!emitted_bg) {
     if (style.custom_bg) {
-      assert(style.bg <= 7);
-      if (UNLIKELY(fprintf(f, "%u;", 40u + style.bg) < 0))
-        return errno;
+      assert(style.bg <= 15);
+      if (style.bg <= 7) {
+        if (UNLIKELY(fprintf(f, "%u;", 40u + style.bg) < 0))
+          return errno;
+      } else {
+        if (UNLIKELY(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
+          return errno;
+      }
     } else {
       if (UNLIKELY(fputs("49;", f) == EOF))
         return errno;
@@ -474,18 +484,14 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
     t->style.custom_bg = false;
     break;
 
-  // we do not support the aixterm extensions, so map the bright colours to
-  // their elaborated form
   case 90 ... 97:
     t->style.custom_fg = true;
-    t->style.bold = true;
-    t->style.fg = entry - 90;
+    t->style.fg = entry - 90 + 8;
     break;
 
   case 100 ... 107:
     t->style.custom_bg = true;
-    t->style.bold = true;
-    t->style.bg = entry - 100;
+    t->style.bg = entry - 100 + 8;
     break;
 
   default:
