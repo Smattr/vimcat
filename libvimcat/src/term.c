@@ -27,11 +27,11 @@ enum { TRUST_CALLER = true };
 
 typedef struct {
   unsigned custom_fg : 1; ///< is `fg` non-default?
-  unsigned fg : 3;        ///< low digit of foreground colour
   unsigned custom_bg : 1; ///< is `bg` non-default?
-  unsigned bg : 3;        ///< low digit of background colour
   unsigned bold : 1;      ///< is bold enabled?
   unsigned underline : 1; ///< is underline enabled?
+  uint8_t fg;             ///< foreground colour
+  uint8_t bg;             ///< background colour
 } style_t;
 
 static style_t style_default(void) { return (style_t){0}; }
@@ -41,19 +41,19 @@ static bool style_eq(style_t a, style_t b) {
   if (a.custom_fg != b.custom_fg)
     return false;
 
-  if (a.custom_fg && a.fg != b.fg)
-    return false;
-
   if (a.custom_bg != b.custom_bg)
-    return false;
-
-  if (a.custom_bg && a.bg != b.bg)
     return false;
 
   if (a.bold != b.bold)
     return false;
 
   if (a.underline != b.underline)
+    return false;
+
+  if (a.custom_fg && a.fg != b.fg)
+    return false;
+
+  if (a.custom_bg && a.bg != b.bg)
     return false;
 
   return true;
@@ -63,38 +63,61 @@ static bool style_eq(style_t a, style_t b) {
 static int style_put(style_t style, FILE *f) {
   assert(f != NULL);
 
+  bool emitted_fg = false;
+  bool emitted_bg = false;
+
   if (UNLIKELY(fputs("\033[", f) == EOF))
     return errno;
 
-  if (style.custom_fg) {
-    if (UNLIKELY(fprintf(f, "3%u", style.fg) < 0))
+  // does this have a foreground colour that requires 256-bit?
+  if (style.custom_fg && style.fg > 7) {
+    if (UNLIKELY(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
       return errno;
-  } else {
-    if (UNLIKELY(fputs("39", f) == EOF))
-      return errno;
+    emitted_fg = true;
   }
 
-  if (style.custom_bg) {
-    if (UNLIKELY(fprintf(f, ";4%u", style.bg) < 0))
+  // does this have a background colour that requires 256-bit?
+  if (style.custom_bg && style.bg > 7) {
+    if (UNLIKELY(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
       return errno;
-  } else {
-    if (UNLIKELY(fputs(";49", f) == EOF))
-      return errno;
+    emitted_bg = true;
+  }
+
+  if (!emitted_fg) {
+    if (style.custom_fg) {
+      assert(style.fg <= 7);
+      if (UNLIKELY(fprintf(f, "%u;", 30u + style.fg) < 0))
+        return errno;
+    } else {
+      if (UNLIKELY(fputs("39;", f) == EOF))
+        return errno;
+    }
+  }
+
+  if (!emitted_bg) {
+    if (style.custom_bg) {
+      assert(style.bg <= 7);
+      if (UNLIKELY(fprintf(f, "%u;", 40u + style.bg) < 0))
+        return errno;
+    } else {
+      if (UNLIKELY(fputs("49;", f) == EOF))
+        return errno;
+    }
   }
 
   if (style.bold) {
-    if (UNLIKELY(fputs(";1", f) == EOF))
+    if (UNLIKELY(fputs("1;", f) == EOF))
       return errno;
   } else {
-    if (UNLIKELY(fputs(";22", f) == EOF))
+    if (UNLIKELY(fputs("22;", f) == EOF))
       return errno;
   }
 
   if (style.underline) {
-    if (UNLIKELY(fputs(";4", f) == EOF))
+    if (UNLIKELY(fputs("4", f) == EOF))
       return errno;
   } else {
-    if (UNLIKELY(fputs(";24", f) == EOF))
+    if (UNLIKELY(fputs("24", f) == EOF))
       return errno;
   }
 
