@@ -477,11 +477,13 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
   // we do not support the aixterm extensions, so map the bright colours to
   // their elaborated form
   case 90 ... 97:
+    t->style.custom_fg = true;
     t->style.bold = true;
     t->style.fg = entry - 90;
     break;
 
   case 100 ... 107:
+    t->style.custom_bg = true;
     t->style.bold = true;
     t->style.bg = entry - 100;
     break;
