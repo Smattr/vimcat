@@ -26,9 +26,7 @@ def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
   with tempfile.TemporaryDirectory() as tmp:
 
     # write a vimrc to force syntax highlighting and 8-bit colour
-    with open(Path(tmp) / ".vimrc", "wt") as f:
-      f.write("syntax on\n"
-              f"set t_Co={t_Co}\n")
+    (Path(tmp) / ".vimrc").write_text(f"syntax on\nset t_Co={t_Co}\n")
     env["HOME"] = tmp
 
     args = ["vimcat", "--debug"]
