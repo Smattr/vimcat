@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -429,6 +430,36 @@ static int process_J(term_t *t, size_t index, bool is_default, size_t entry) {
   return 0;
 }
 
+/// handle `<esc>[38;5;<id>m`
+static int process_38_5_m(term_t *t, size_t id) {
+  assert(t != NULL);
+
+  if (id > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[38;5;%zum", id);
+    return ENOTSUP;
+  }
+
+  t->style.custom_fg = true;
+  t->style.fg = id;
+
+  return 0;
+}
+
+/// handle `<esc>[48;5;<id>m`
+static int process_48_5_m(term_t *t, size_t id) {
+  assert(t != NULL);
+
+  if (id > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[48;5;%zum", id);
+    return ENOTSUP;
+  }
+
+  t->style.custom_bg = true;
+  t->style.bg = id;
+
+  return 0;
+}
+
 static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
   assert(t != NULL);
 
@@ -578,27 +609,22 @@ static int process_csi(term_t *t, const char *csi) {
     bool is_256_fg = strncmp(csi, "38;5;", strlen("38;5;")) == 0;
     if (is_256_fg) {
       const char *idm = csi + strlen("38;5;");
+      size_t id = 0;
+      for (; isdigit(*idm); ++idm)
+        id = id * 10 + *idm - '0';
+      if (*idm == 'm')
+        return process_38_5_m(t, id);
+    }
 
-      // 0-7?
-      if (idm[0] >= '0' && idm[0] < '8' && idm[1] == 'm') {
-        size_t equiv_8 = idm[0] - '0' + 30;
-        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
-        return process_m(t, 0, false, equiv_8);
-      }
-
-      // 8-9?
-      if (isdigit(idm[0]) && idm[1] == 'm') {
-        size_t equiv_8 = idm[0] - '8' + 90;
-        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
-        return process_m(t, 0, false, equiv_8);
-      }
-
-      // 10-15?
-      if (idm[0] == '1' && idm[1] >= '0' && idm[1] < '6' && idm[2] == 'm') {
-        size_t equiv_8 = idm[1] - '0' + 92;
-        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
-        return process_m(t, 0, false, equiv_8);
-      }
+    // is this a 256-colour background switch?
+    bool is_256_bg = strncmp(csi, "48;5;", strlen("48;5;")) == 0;
+    if (is_256_bg) {
+      const char *idm = csi + strlen("48;5;");
+      size_t id = 0;
+      for (; isdigit(*idm); ++idm)
+        id = id * 10 + *idm - '0';
+      if (*idm == 'm')
+        return process_48_5_m(t, id);
     }
   }
 

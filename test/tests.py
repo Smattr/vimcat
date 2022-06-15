@@ -15,9 +15,9 @@ from typing import Optional
   pytest.param(2, marks=pytest.mark.xfail),
   8,
   16,
-  pytest.param(88, marks=pytest.mark.xfail(strict=True)),
-  pytest.param(256, marks=pytest.mark.xfail(strict=True)),
-  pytest.param(16777216, marks=pytest.mark.xfail(strict=True))))
+  88,
+  256,
+  16777216))
 def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
   """
   `vimcat` should obey the user’s colour preferences
