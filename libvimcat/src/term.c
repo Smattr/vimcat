@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -27,11 +28,11 @@ enum { TRUST_CALLER = true };
 
 typedef struct {
   unsigned custom_fg : 1; ///< is `fg` non-default?
-  unsigned fg : 3;        ///< low digit of foreground colour
   unsigned custom_bg : 1; ///< is `bg` non-default?
-  unsigned bg : 3;        ///< low digit of background colour
   unsigned bold : 1;      ///< is bold enabled?
   unsigned underline : 1; ///< is underline enabled?
+  uint8_t fg;             ///< foreground colour
+  uint8_t bg;             ///< background colour
 } style_t;
 
 static style_t style_default(void) { return (style_t){0}; }
@@ -41,19 +42,19 @@ static bool style_eq(style_t a, style_t b) {
   if (a.custom_fg != b.custom_fg)
     return false;
 
-  if (a.custom_fg && a.fg != b.fg)
-    return false;
-
   if (a.custom_bg != b.custom_bg)
-    return false;
-
-  if (a.custom_bg && a.bg != b.bg)
     return false;
 
   if (a.bold != b.bold)
     return false;
 
   if (a.underline != b.underline)
+    return false;
+
+  if (a.custom_fg && a.fg != b.fg)
+    return false;
+
+  if (a.custom_bg && a.bg != b.bg)
     return false;
 
   return true;
@@ -63,38 +64,71 @@ static bool style_eq(style_t a, style_t b) {
 static int style_put(style_t style, FILE *f) {
   assert(f != NULL);
 
+  bool emitted_fg = false;
+  bool emitted_bg = false;
+
   if (UNLIKELY(fputs("\033[", f) == EOF))
     return errno;
 
-  if (style.custom_fg) {
-    if (UNLIKELY(fprintf(f, "3%u", style.fg) < 0))
+  // does this have a foreground colour that requires 256-bit?
+  if (style.custom_fg && style.fg > 15) {
+    if (UNLIKELY(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
       return errno;
-  } else {
-    if (UNLIKELY(fputs("39", f) == EOF))
-      return errno;
+    emitted_fg = true;
   }
 
-  if (style.custom_bg) {
-    if (UNLIKELY(fprintf(f, ";4%u", style.bg) < 0))
+  // does this have a background colour that requires 256-bit?
+  if (style.custom_bg && style.bg > 15) {
+    if (UNLIKELY(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
       return errno;
-  } else {
-    if (UNLIKELY(fputs(";49", f) == EOF))
-      return errno;
+    emitted_bg = true;
+  }
+
+  if (!emitted_fg) {
+    if (style.custom_fg) {
+      assert(style.fg <= 15);
+      if (style.fg <= 7) {
+        if (UNLIKELY(fprintf(f, "%u;", 30u + style.fg) < 0))
+          return errno;
+      } else {
+        if (UNLIKELY(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
+          return errno;
+      }
+    } else {
+      if (UNLIKELY(fputs("39;", f) == EOF))
+        return errno;
+    }
+  }
+
+  if (!emitted_bg) {
+    if (style.custom_bg) {
+      assert(style.bg <= 15);
+      if (style.bg <= 7) {
+        if (UNLIKELY(fprintf(f, "%u;", 40u + style.bg) < 0))
+          return errno;
+      } else {
+        if (UNLIKELY(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
+          return errno;
+      }
+    } else {
+      if (UNLIKELY(fputs("49;", f) == EOF))
+        return errno;
+    }
   }
 
   if (style.bold) {
-    if (UNLIKELY(fputs(";1", f) == EOF))
+    if (UNLIKELY(fputs("1;", f) == EOF))
       return errno;
   } else {
-    if (UNLIKELY(fputs(";22", f) == EOF))
+    if (UNLIKELY(fputs("22;", f) == EOF))
       return errno;
   }
 
   if (style.underline) {
-    if (UNLIKELY(fputs(";4", f) == EOF))
+    if (UNLIKELY(fputs("4", f) == EOF))
       return errno;
   } else {
-    if (UNLIKELY(fputs(";24", f) == EOF))
+    if (UNLIKELY(fputs("24", f) == EOF))
       return errno;
   }
 
@@ -396,6 +430,36 @@ static int process_J(term_t *t, size_t index, bool is_default, size_t entry) {
   return 0;
 }
 
+/// handle `<esc>[38;5;<id>m`
+static int process_38_5_m(term_t *t, size_t id) {
+  assert(t != NULL);
+
+  if (id > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[38;5;%zum", id);
+    return ENOTSUP;
+  }
+
+  t->style.custom_fg = true;
+  t->style.fg = id;
+
+  return 0;
+}
+
+/// handle `<esc>[48;5;<id>m`
+static int process_48_5_m(term_t *t, size_t id) {
+  assert(t != NULL);
+
+  if (id > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[48;5;%zum", id);
+    return ENOTSUP;
+  }
+
+  t->style.custom_bg = true;
+  t->style.bg = id;
+
+  return 0;
+}
+
 static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
   assert(t != NULL);
 
@@ -434,34 +498,24 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
     break;
 
   case 30 ... 37:
-    t->style.custom_fg = true;
-    t->style.fg = entry - 30;
-    break;
+    return process_38_5_m(t, entry - 30);
 
   case 39:
     t->style.custom_fg = false;
     break;
 
   case 40 ... 47:
-    t->style.custom_bg = true;
-    t->style.bg = entry - 40;
-    break;
+    return process_48_5_m(t, entry - 40);
 
   case 49:
     t->style.custom_bg = false;
     break;
 
-  // we do not support the aixterm extensions, so map the bright colours to
-  // their elaborated form
   case 90 ... 97:
-    t->style.bold = true;
-    t->style.fg = entry - 90;
-    break;
+    return process_38_5_m(t, entry - 90 + 8);
 
   case 100 ... 107:
-    t->style.bold = true;
-    t->style.bg = entry - 100;
-    break;
+    return process_48_5_m(t, entry - 100 + 8);
 
   default:
     DEBUG("unsupported SGR attribute <esc>[%zum", entry);
@@ -499,6 +553,20 @@ static int process_csi(term_t *t, const char *csi) {
     t->y = 1;
     return 0;
   }
+
+#ifdef __APPLE__
+  // Vim on macOS when `t_Co=2` can emit unusual sequences like `<esc>[311m`
+  // that appear to have no defined meaning. This seems to result from an
+  // incorrect call to `term_color` in Vim. I do not know if this is a Vim bug
+  // or a bug in some default configuration on macOS or simply violation of an
+  // assumption that there are no monochrome macOS environments (reasonable).
+  // Just ignore this sequence if we see it.
+  if (UNLIKELY(csi[0] == '3' && csi[1] == '1' && isdigit(csi[2]) &&
+               csi[3] == 'm')) {
+    DEBUG("ignoring <esc>[%s", csi);
+    return 0;
+  }
+#endif
 
   // check we have a known CSI
   int (*handler)(term_t * t, size_t index, bool is_default, size_t entry) =
@@ -547,27 +615,22 @@ static int process_csi(term_t *t, const char *csi) {
     bool is_256_fg = strncmp(csi, "38;5;", strlen("38;5;")) == 0;
     if (is_256_fg) {
       const char *idm = csi + strlen("38;5;");
+      size_t id = 0;
+      for (; isdigit(*idm); ++idm)
+        id = id * 10 + *idm - '0';
+      if (*idm == 'm')
+        return process_38_5_m(t, id);
+    }
 
-      // 0-7?
-      if (idm[0] >= '0' && idm[0] < '8' && idm[1] == 'm') {
-        size_t equiv_8 = idm[0] - '0' + 30;
-        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
-        return process_m(t, 0, false, equiv_8);
-      }
-
-      // 8-9?
-      if (isdigit(idm[0]) && idm[1] == 'm') {
-        size_t equiv_8 = idm[0] - '8' + 90;
-        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
-        return process_m(t, 0, false, equiv_8);
-      }
-
-      // 10-15?
-      if (idm[0] == '1' && idm[1] >= '0' && idm[1] < '6' && idm[2] == 'm') {
-        size_t equiv_8 = idm[1] - '0' + 92;
-        DEBUG("remapping <esc>[%s to <esc>[%zum", csi, equiv_8);
-        return process_m(t, 0, false, equiv_8);
-      }
+    // is this a 256-colour background switch?
+    bool is_256_bg = strncmp(csi, "48;5;", strlen("48;5;")) == 0;
+    if (is_256_bg) {
+      const char *idm = csi + strlen("48;5;");
+      size_t id = 0;
+      for (; isdigit(*idm); ++idm)
+        id = id * 10 + *idm - '0';
+      if (*idm == 'm')
+        return process_48_5_m(t, id);
     }
   }
 

@@ -11,7 +11,8 @@ from typing import Optional
 
 @pytest.mark.parametrize("colour", (None, "always", "auto", "never"))
 @pytest.mark.parametrize("no_color", (False, True))
-def test_colour(colour: Optional[str], no_color: bool):
+@pytest.mark.parametrize("t_Co", (2, 8, 16, 88, 256, 16777216))
+def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
   """
   `vimcat` should obey the user’s colour preferences
   """
@@ -25,9 +26,7 @@ def test_colour(colour: Optional[str], no_color: bool):
   with tempfile.TemporaryDirectory() as tmp:
 
     # write a vimrc to force syntax highlighting and 8-bit colour
-    with open(Path(tmp) / ".vimrc", "wt") as f:
-      f.write("syntax on\n"
-              "set t_Co=8\n")
+    (Path(tmp) / ".vimrc").write_text(f"syntax on\nset t_Co={t_Co}\n")
     env["HOME"] = tmp
 
     args = ["vimcat", "--debug"]
@@ -40,6 +39,10 @@ def test_colour(colour: Optional[str], no_color: bool):
 
   # was there a Control Sequence Identifier in the output?
   contains_csi = b"\033[" in output
+
+  # allow no colour in monochrome mode, as it may be unused/unsupported
+  if t_Co == 2 and not contains_csi:
+    return
 
   if colour == "auto" or colour is None:
     assert contains_csi != no_color, "incorrect NO_COLOR handling"
