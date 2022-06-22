@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include <vimcat/debug.h>
 
-FILE *debug;
+FILE *vimcat_debug;
 
 FILE *vimcat_set_debug(FILE *stream) {
-  FILE *old = debug;
-  debug = stream;
+  FILE *old = vimcat_debug;
+  vimcat_debug = stream;
   return old;
 }
 
