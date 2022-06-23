@@ -1,6 +1,12 @@
 Change log
 ==========
 
+v2022.06.23
+-----------
+
+* libvimcat: a symbol has been renamed that may have caused conflicts when
+  static linking (commit ef594bb764e8a316f3dd4f158c9aa109852037e6).
+
 v2022.06.20
 -----------
 
