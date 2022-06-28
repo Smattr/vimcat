@@ -13,7 +13,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wwrite-strings -Wmissing-prot
 add_definitions(-D_GNU_SOURCE)
 
 # enable --as-needed, present on GNU ld on Linux, to minimise dependencies
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
 endif()
