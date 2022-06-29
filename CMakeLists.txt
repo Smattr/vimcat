@@ -7,7 +7,8 @@ include(GNUInstallDirs)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wwrite-strings -Wmissing-prototypes -Wshadow")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Wwrite-strings \
+  -Wmissing-prototypes -Wshadow -Wundef")
 
 # asprintf
 add_definitions(-D_GNU_SOURCE)
