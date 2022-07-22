@@ -20,7 +20,7 @@ enum { TRUST_CALLER = true };
     if (TRUST_CALLER) {                                                        \
       assert(cond);                                                            \
     } else {                                                                   \
-      if (UNLIKELY(!(cond))) {                                                 \
+      if (ERROR(!(cond))) {                                                    \
         return EINVAL;                                                         \
       }                                                                        \
     }                                                                          \
@@ -67,19 +67,19 @@ static int style_put(style_t style, FILE *f) {
   bool emitted_fg = false;
   bool emitted_bg = false;
 
-  if (UNLIKELY(fputs("\033[", f) == EOF))
+  if (ERROR(fputs("\033[", f) == EOF))
     return errno;
 
   // does this have a foreground colour that requires 256-bit?
   if (style.custom_fg && style.fg > 15) {
-    if (UNLIKELY(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
+    if (ERROR(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
       return errno;
     emitted_fg = true;
   }
 
   // does this have a background colour that requires 256-bit?
   if (style.custom_bg && style.bg > 15) {
-    if (UNLIKELY(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
+    if (ERROR(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
       return errno;
     emitted_bg = true;
   }
@@ -88,14 +88,14 @@ static int style_put(style_t style, FILE *f) {
     if (style.custom_fg) {
       assert(style.fg <= 15);
       if (style.fg <= 7) {
-        if (UNLIKELY(fprintf(f, "%u;", 30u + style.fg) < 0))
+        if (ERROR(fprintf(f, "%u;", 30u + style.fg) < 0))
           return errno;
       } else {
-        if (UNLIKELY(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
+        if (ERROR(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
           return errno;
       }
     } else {
-      if (UNLIKELY(fputs("39;", f) == EOF))
+      if (ERROR(fputs("39;", f) == EOF))
         return errno;
     }
   }
@@ -104,35 +104,35 @@ static int style_put(style_t style, FILE *f) {
     if (style.custom_bg) {
       assert(style.bg <= 15);
       if (style.bg <= 7) {
-        if (UNLIKELY(fprintf(f, "%u;", 40u + style.bg) < 0))
+        if (ERROR(fprintf(f, "%u;", 40u + style.bg) < 0))
           return errno;
       } else {
-        if (UNLIKELY(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
+        if (ERROR(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
           return errno;
       }
     } else {
-      if (UNLIKELY(fputs("49;", f) == EOF))
+      if (ERROR(fputs("49;", f) == EOF))
         return errno;
     }
   }
 
   if (style.bold) {
-    if (UNLIKELY(fputs("1;", f) == EOF))
+    if (ERROR(fputs("1;", f) == EOF))
       return errno;
   } else {
-    if (UNLIKELY(fputs("22;", f) == EOF))
+    if (ERROR(fputs("22;", f) == EOF))
       return errno;
   }
 
   if (style.underline) {
-    if (UNLIKELY(fputs("4", f) == EOF))
+    if (ERROR(fputs("4", f) == EOF))
       return errno;
   } else {
-    if (UNLIKELY(fputs("24", f) == EOF))
+    if (ERROR(fputs("24", f) == EOF))
       return errno;
   }
 
-  if (UNLIKELY(fputc('m', f) == EOF))
+  if (ERROR(fputc('m', f) == EOF))
     return errno;
 
   return 0;
@@ -164,8 +164,8 @@ static int grapheme_put(const grapheme_t *g, FILE *f) {
   assert(g != NULL);
   assert(f != NULL);
 
-  if (UNLIKELY(fprintf(f, "%.*s", (int)sizeof(g->value.bytes), g->value.bytes) <
-               0))
+  if (ERROR(fprintf(f, "%.*s", (int)sizeof(g->value.bytes), g->value.bytes) <
+            0))
     return errno;
 
   return 0;
@@ -228,7 +228,7 @@ int term_new(term_t **t, size_t columns, size_t rows) {
   PRECONDITION(rows > 0);
 
   term_t *term = calloc(1, sizeof(*term) + sizeof(cell_t) * columns * rows);
-  if (UNLIKELY(term == NULL))
+  if (ERROR(term == NULL))
     return ENOMEM;
 
   int rc = 0;
@@ -239,7 +239,7 @@ int term_new(term_t **t, size_t columns, size_t rows) {
   term->x = 1;
   term->y = 1;
 
-  if (UNLIKELY((rc = buffer_open(&term->stage))))
+  if (ERROR((rc = buffer_open(&term->stage))))
     goto done;
 
   // success
@@ -793,7 +793,7 @@ int term_send(term_t *t, FILE *from) {
           }
 
           // stage this character
-          if (UNLIKELY(fputc(c, t->stage.f) == EOF))
+          if (ERROR(fputc(c, t->stage.f) == EOF))
             return errno;
 
           // was this the CSI sequence terminator?
@@ -804,7 +804,7 @@ int term_send(term_t *t, FILE *from) {
 
         // apply the effects of this sequence
         int rc = process_csi(t, t->stage.base);
-        if (UNLIKELY(rc != 0))
+        if (ERROR(rc != 0))
           return rc;
 
         continue;
@@ -882,27 +882,27 @@ int term_readline(term_t *t, size_t row, const char **line) {
     // update style for this grapheme, if necessary
     if (!style_eq(style, cell->style)) {
       int rc = style_put(cell->style, f);
-      if (UNLIKELY(rc != 0))
+      if (ERROR(rc != 0))
         return rc;
       style = cell->style;
     }
 
     // if this cell is empty, write a space to mimic its effect
     if (cell_is_empty(cell)) {
-      if (UNLIKELY(fputc(' ', f) == EOF))
+      if (ERROR(fputc(' ', f) == EOF))
         return errno;
 
       // otherwise write the character itself
     } else {
       int rc = cell_put(cell, f);
-      if (UNLIKELY(rc != 0))
+      if (ERROR(rc != 0))
         return rc;
     }
   }
 
   // reset the style to simplify the caller’s life
   if (!style_eq(style, style_default())) {
-    if (UNLIKELY(fputs("\033[0m", f) == EOF))
+    if (ERROR(fputs("\033[0m", f) == EOF))
       return errno;
   }
 

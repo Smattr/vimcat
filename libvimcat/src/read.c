@@ -46,7 +46,7 @@ static int get_extent(const char *filename, size_t *rows, size_t *columns) {
   assert(filename != NULL);
 
   FILE *f = fopen(filename, "r");
-  if (f == NULL)
+  if (ERROR(f == NULL))
     return errno;
 
   size_t lines = 1;
@@ -84,7 +84,7 @@ static int get_extent(const char *filename, size_t *rows, size_t *columns) {
       }
 
       if (n != EOF) {
-        if (UNLIKELY(ungetc(n, f) == EOF)) {
+        if (ERROR(ungetc(n, f) == EOF)) {
           rc = EIO;
           goto done;
         }
@@ -143,12 +143,12 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   int devnull = -1;
 
   posix_spawn_file_actions_t actions;
-  if (UNLIKELY((rc = posix_spawn_file_actions_init(&actions))))
+  if (ERROR((rc = posix_spawn_file_actions_init(&actions))))
     return rc;
 
   // create a pipe on which we can receive Vim’s rendering of the file
   int fd[2] = {-1, -1};
-  if (UNLIKELY(pipe(fd) < 0)) {
+  if (ERROR(pipe(fd) < 0)) {
     rc = errno;
     goto done;
   }
@@ -156,7 +156,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   // set close-on-exec on the read end which the child (Vim) does not need
   {
     int flags = fcntl(fd[0], F_GETFD);
-    if (UNLIKELY(fcntl(fd[0], F_SETFD, flags | O_CLOEXEC) == -1)) {
+    if (ERROR(fcntl(fd[0], F_SETFD, flags | O_CLOEXEC) == -1)) {
       rc = errno;
       goto done;
     }
@@ -164,28 +164,28 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
 
   // turn the read end of the pipe into a file handle
   output = fdopen(fd[0], "r");
-  if (UNLIKELY(output == NULL)) {
+  if (ERROR(output == NULL)) {
     rc = errno;
     goto done;
   }
   fd[0] = -1;
 
   // dup the write end of the pipe over Vim’s stdout
-  if (UNLIKELY((rc = posix_spawn_file_actions_adddup2(&actions, fd[1],
-                                                      STDOUT_FILENO))))
+  if (ERROR((rc = posix_spawn_file_actions_adddup2(&actions, fd[1],
+                                                   STDOUT_FILENO))))
     goto done;
 
   // dup /dev/null over Vim’s stdin and stderr
   devnull = open("/dev/null", O_RDWR);
-  if (UNLIKELY(devnull < 0)) {
+  if (ERROR(devnull < 0)) {
     rc = errno;
     goto done;
   }
-  if (UNLIKELY((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
-                                                      STDIN_FILENO))))
+  if (ERROR((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
+                                                   STDIN_FILENO))))
     goto done;
-  if (UNLIKELY((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
-                                                      STDERR_FILENO))))
+  if (ERROR((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
+                                                   STDERR_FILENO))))
     goto done;
 
   // construct Vim parameter to force terminal height
@@ -264,8 +264,8 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
 
   // spawn Vim
   pid_t p = 0;
-  if (UNLIKELY(((rc = posix_spawnp(&p, argv[0], &actions, NULL,
-                                   (char *const *)argv, get_environ())))))
+  if (ERROR(((rc = posix_spawnp(&p, argv[0], &actions, NULL,
+                                (char *const *)argv, get_environ())))))
     goto done;
   DEBUG("vim is PID %ld", (long)p);
 
@@ -291,10 +291,10 @@ done:
 int vimcat_read(const char *filename,
                 int (*callback)(void *state, const char *line), void *state) {
 
-  if (UNLIKELY(filename == NULL))
+  if (ERROR(filename == NULL))
     return EINVAL;
 
-  if (UNLIKELY(callback == NULL))
+  if (ERROR(callback == NULL))
     return EINVAL;
 
   int rc = 0;
@@ -305,7 +305,7 @@ int vimcat_read(const char *filename,
   // line-wrapping and/or truncating
   size_t rows = 0;
   size_t columns = 0;
-  if ((rc = get_extent(filename, &rows, &columns)))
+  if (ERROR((rc = get_extent(filename, &rows, &columns))))
     goto done;
 
   DEBUG("%s has %zu rows and %zu columns", filename, rows, columns);
@@ -341,7 +341,7 @@ int vimcat_read(const char *filename,
   }
 
   // create a virtual terminal
-  if (UNLIKELY((rc = term_new(&term, term_columns, term_rows))))
+  if (ERROR((rc = term_new(&term, term_columns, term_rows))))
     goto done;
 
   for (size_t row = 1; row <= rows;) {
@@ -359,8 +359,8 @@ int vimcat_read(const char *filename,
     // ask Vim to render the file
     FILE *vim_stdout = NULL;
     pid_t vim = 0;
-    if (UNLIKELY((rc = run_vim(&vim_stdout, &vim, filename, term_rows,
-                               term_columns, row))))
+    if (ERROR((rc = run_vim(&vim_stdout, &vim, filename, term_rows,
+                            term_columns, row))))
       goto done;
 
     assert(vim_stdout != NULL && "invalid stream for Vim’s output");
@@ -370,7 +370,7 @@ int vimcat_read(const char *filename,
     rc = term_send(term, vim_stdout);
 
     // if we failed to drain the entire output, discard the rest now
-    if (UNLIKELY(rc != 0)) {
+    if (ERROR(rc != 0)) {
       while (getc(vim_stdout) != EOF)
         ;
     }
@@ -382,7 +382,7 @@ int vimcat_read(const char *filename,
 
       DEBUG("waiting for Vim to exit...");
       int status;
-      if (UNLIKELY(waitpid(vim, &status, 0) < 0)) {
+      if (ERROR(waitpid(vim, &status, 0) < 0)) {
         if (rc == 0) {
           rc = errno;
           DEBUG("waitpid failed: %s", strerror(rc));
@@ -406,7 +406,7 @@ int vimcat_read(const char *filename,
     for (size_t y = 1; y <= vim_rows; ++y) {
 
       const char *line = NULL;
-      if (UNLIKELY((rc = term_readline(term, y, &line))))
+      if (ERROR((rc = term_readline(term, y, &line))))
         goto done;
 
       if (UNLIKELY((rc = callback(state, line))))

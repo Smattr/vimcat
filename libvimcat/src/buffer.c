@@ -1,5 +1,5 @@
 #include "buffer.h"
-#include "compiler.h"
+#include "debug.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -12,7 +12,7 @@ int buffer_open(buffer_t *b) {
   memset(b, 0, sizeof(*b));
 
   b->f = open_memstream(&b->base, &b->size);
-  if (UNLIKELY(b->f == NULL))
+  if (ERROR(b->f == NULL))
     return errno;
 
   return 0;
