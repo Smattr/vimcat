@@ -64,57 +64,68 @@ static bool style_eq(style_t a, style_t b) {
 static int style_put(style_t style, FILE *f) {
   assert(f != NULL);
 
-  bool emitted_fg = false;
-  bool emitted_bg = false;
-
   if (ERROR(fputs("\033[", f) == EOF))
     return errno;
 
-  // does this have a foreground colour that requires 256-bit?
-  if (style.custom_fg && style.fg > 15) {
-    if (ERROR(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
-      return errno;
-    emitted_fg = true;
-  }
+  // emit the foreground colour
+  do {
 
-  // does this have a background colour that requires 256-bit?
-  if (style.custom_bg && style.bg > 15) {
-    if (ERROR(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
-      return errno;
-    emitted_bg = true;
-  }
-
-  if (!emitted_fg) {
-    if (style.custom_fg) {
-      assert(style.fg <= 15);
-      if (style.fg <= 7) {
-        if (ERROR(fprintf(f, "%u;", 30u + style.fg) < 0))
-          return errno;
-      } else {
-        if (ERROR(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
-          return errno;
-      }
-    } else {
+    // default?
+    if (!style.custom_fg) {
       if (ERROR(fputs("39;", f) == EOF))
         return errno;
+      break;
     }
-  }
 
-  if (!emitted_bg) {
-    if (style.custom_bg) {
-      assert(style.bg <= 15);
-      if (style.bg <= 7) {
-        if (ERROR(fprintf(f, "%u;", 40u + style.bg) < 0))
-          return errno;
-      } else {
-        if (ERROR(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
-          return errno;
-      }
-    } else {
+    // can we do it as a 3-bit colour?
+    if (style.fg <= 7) {
+      if (ERROR(fprintf(f, "%u;", 30u + style.fg) < 0))
+        return errno;
+      break;
+    }
+
+    // can we do it as a 4-bit colour?
+    if (style.fg <= 15) {
+      if (ERROR(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
+        return errno;
+      break;
+    }
+
+    // otherwise, 256-bit colour
+    if (ERROR(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
+      return errno;
+
+  } while (0);
+
+  // emit the background colour
+  do {
+
+    // default?
+    if (!style.custom_bg) {
       if (ERROR(fputs("49;", f) == EOF))
         return errno;
+      break;
     }
-  }
+
+    // can we do it as a 3-bit colour?
+    if (style.bg <= 7) {
+      if (ERROR(fprintf(f, "%u;", 40u + style.bg) < 0))
+        return errno;
+      break;
+    }
+
+    // can we do it as a 4-bit colour?
+    if (style.bg <= 15) {
+      if (ERROR(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
+        return errno;
+      break;
+    }
+
+    // otherwise, 256-bit colour
+    if (ERROR(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
+      return errno;
+
+  } while (0);
 
   if (style.bold) {
     if (ERROR(fputs("1;", f) == EOF))
