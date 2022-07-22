@@ -1,6 +1,8 @@
 #pragma once
 
 #include "compiler.h"
+#include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,3 +21,15 @@ extern FILE *vimcat_debug INTERNAL;
       funlockfile(vimcat_debug);                                               \
     }                                                                          \
   } while (0)
+
+/// logging wrapper for error conditions
+#define ERROR(cond)                                                            \
+  ({                                                                           \
+    bool cond_ = (cond);                                                       \
+    if (UNLIKELY(cond_)) {                                                     \
+      int errno_ = errno;                                                      \
+      DEBUG("`%s` failed (current errno is %d)", #cond, errno_);               \
+      errno = errno_;                                                          \
+    }                                                                          \
+    cond_;                                                                     \
+  })
