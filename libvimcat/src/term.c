@@ -502,10 +502,8 @@ static int process_38_5_m(term_t *t, size_t id) {
     return ENOTSUP;
   }
 
-  t->style.custom_fg = true;
-  t->style.fg = colour_8_to_24((uint8_t)id);
-
-  return 0;
+  const colour_t c = colour_8_to_24((uint8_t)id);
+  return process_38_2_m(t, c.r, c.g, c.b);
 }
 
 /// handle `<esc>[48;5;<id>m`
@@ -517,10 +515,8 @@ static int process_48_5_m(term_t *t, size_t id) {
     return ENOTSUP;
   }
 
-  t->style.custom_bg = true;
-  t->style.bg = colour_8_to_24((uint8_t)id);
-
-  return 0;
+  const colour_t c = colour_8_to_24((uint8_t)id);
+  return process_48_2_m(t, c.r, c.g, c.b);
 }
 
 static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
