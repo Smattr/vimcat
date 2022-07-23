@@ -640,9 +640,9 @@ static int process_csi(term_t *t, const char *csi) {
 
   if (final == 'm') {
 
-    // is this a 256-colour foreground switch?
-    bool is_256_fg = strncmp(csi, "38;5;", strlen("38;5;")) == 0;
-    if (is_256_fg) {
+    // is this an 8-bit colour foreground switch?
+    bool is_8_fg = strncmp(csi, "38;5;", strlen("38;5;")) == 0;
+    if (is_8_fg) {
       const char *idm = csi + strlen("38;5;");
       size_t id = 0;
       for (; isdigit(*idm); ++idm)
@@ -651,9 +651,9 @@ static int process_csi(term_t *t, const char *csi) {
         return process_38_5_m(t, id);
     }
 
-    // is this a 256-colour background switch?
-    bool is_256_bg = strncmp(csi, "48;5;", strlen("48;5;")) == 0;
-    if (is_256_bg) {
+    // is this an 8-bit colour background switch?
+    bool is_8_bg = strncmp(csi, "48;5;", strlen("48;5;")) == 0;
+    if (is_8_bg) {
       const char *idm = csi + strlen("48;5;");
       size_t id = 0;
       for (; isdigit(*idm); ++idm)
