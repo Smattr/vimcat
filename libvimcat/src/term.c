@@ -459,6 +459,40 @@ static int process_J(term_t *t, size_t index, bool is_default, size_t entry) {
   return 0;
 }
 
+/// handle `<esc>[38;2;<r>;<g>;<b>m`
+static int process_38_2_m(term_t *t, size_t r, size_t g, size_t b) {
+  assert(t != NULL);
+
+  if (r > UINT8_MAX || g > UINT8_MAX || b > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[38;2;%zu;%zu;%zum", r, g, b);
+    return ENOTSUP;
+  }
+
+  t->style.custom_fg = true;
+  t->style.fg.r = (uint8_t)r;
+  t->style.fg.g = (uint8_t)g;
+  t->style.fg.b = (uint8_t)b;
+
+  return 0;
+}
+
+/// handle `<esc>[48;2;<r>;<g>;<b>m`
+static int process_48_2_m(term_t *t, size_t r, size_t g, size_t b) {
+  assert(t != NULL);
+
+  if (r > UINT8_MAX || g > UINT8_MAX || b > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[48;2;%zu;%zu;%zum", r, g, b);
+    return ENOTSUP;
+  }
+
+  t->style.custom_bg = true;
+  t->style.bg.r = (uint8_t)r;
+  t->style.bg.g = (uint8_t)g;
+  t->style.bg.b = (uint8_t)b;
+
+  return 0;
+}
+
 /// handle `<esc>[38;5;<id>m`
 static int process_38_5_m(term_t *t, size_t id) {
   assert(t != NULL);
@@ -660,6 +694,52 @@ static int process_csi(term_t *t, const char *csi) {
         id = id * 10 + *idm - '0';
       if (*idm == 'm')
         return process_48_5_m(t, id);
+    }
+
+    // is this a 24-bit colour foreground switch?
+    bool is_24_fg = strncmp(csi, "38;2;", strlen("38;2;")) == 0;
+    if (is_24_fg) {
+      do {
+        const char *idm = csi + strlen("38;2");
+        size_t r = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          r = r * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t g = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          g = g * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t b = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          b = b * 10 + *idm - '0';
+        if (*idm == 'm')
+          return process_38_2_m(t, r, g, b);
+      } while (0);
+    }
+
+    // is this a 24-bit colour background switch?
+    bool is_24_bg = strncmp(csi, "48;2;", strlen("48;2;")) == 0;
+    if (is_24_bg) {
+      do {
+        const char *idm = csi + strlen("48;2");
+        size_t r = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          r = r * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t g = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          g = g * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t b = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          b = b * 10 + *idm - '0';
+        if (*idm == 'm')
+          return process_48_2_m(t, r, g, b);
+      } while (0);
     }
   }
 
