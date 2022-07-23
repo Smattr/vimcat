@@ -93,6 +93,7 @@ def test_combining_characters():
   "newline3.txt",
   "newline4.txt",
   "newline5.txt",
+  pytest.param("newline6.txt", marks=pytest.mark.xfail(strict=True)),
 ))
 def test_newline(case: str):
   """
