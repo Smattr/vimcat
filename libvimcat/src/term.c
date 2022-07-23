@@ -1,5 +1,6 @@
 #include "term.h"
 #include "buffer.h"
+#include "colour.h"
 #include "compiler.h"
 #include "debug.h"
 #include <assert.h>
@@ -31,8 +32,8 @@ typedef struct {
   unsigned custom_bg : 1; ///< is `bg` non-default?
   unsigned bold : 1;      ///< is bold enabled?
   unsigned underline : 1; ///< is underline enabled?
-  uint8_t fg;             ///< foreground colour
-  uint8_t bg;             ///< background colour
+  colour_t fg;            ///< foreground colour
+  colour_t bg;            ///< background colour
 } style_t;
 
 static style_t style_default(void) { return (style_t){0}; }
@@ -51,10 +52,10 @@ static bool style_eq(style_t a, style_t b) {
   if (a.underline != b.underline)
     return false;
 
-  if (a.custom_fg && a.fg != b.fg)
+  if (a.custom_fg && !colour_eq(a.fg, b.fg))
     return false;
 
-  if (a.custom_bg && a.bg != b.bg)
+  if (a.custom_bg && !colour_eq(a.bg, b.bg))
     return false;
 
   return true;
@@ -77,23 +78,31 @@ static int style_put(style_t style, FILE *f) {
       break;
     }
 
+    unsigned colour8 = colour_24_to_8(style.fg);
+
     // can we do it as a 3-bit colour?
-    if (style.fg <= 7) {
-      if (ERROR(fprintf(f, "%u;", 30u + style.fg) < 0))
+    if (colour8 <= 7) {
+      if (ERROR(fprintf(f, "%u;", 30 + colour8) < 0))
         return errno;
       break;
     }
 
     // can we do it as a 4-bit colour?
-    if (style.fg <= 15) {
-      if (ERROR(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
+    if (colour8 <= 15) {
+      if (ERROR(fprintf(f, "%u;", 90 + colour8 - 8) < 0))
         return errno;
       break;
     }
 
-    // otherwise, 256-bit colour
-    if (ERROR(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
-      return errno;
+    // can we do it as an 8-bit colour?
+    if (colour8 <= 255) {
+      if (ERROR(fprintf(f, "38;5;%um\033[", colour8) < 0))
+        return errno;
+      break;
+    }
+
+    // TODO: we do not yet support 24-bit colours being input
+    UNREACHABLE();
 
   } while (0);
 
@@ -107,23 +116,28 @@ static int style_put(style_t style, FILE *f) {
       break;
     }
 
+    unsigned colour8 = colour_24_to_8(style.bg);
+
     // can we do it as a 3-bit colour?
-    if (style.bg <= 7) {
-      if (ERROR(fprintf(f, "%u;", 40u + style.bg) < 0))
+    if (colour8 <= 7) {
+      if (ERROR(fprintf(f, "%u;", 40u + colour8) < 0))
         return errno;
       break;
     }
 
     // can we do it as a 4-bit colour?
-    if (style.bg <= 15) {
-      if (ERROR(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
+    if (colour8 <= 15) {
+      if (ERROR(fprintf(f, "%u;", 100 + colour8 - 8) < 0))
         return errno;
       break;
     }
 
-    // otherwise, 256-bit colour
-    if (ERROR(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
+    // can we do it as an 8-bit colour?
+    if (ERROR(fprintf(f, "48;5;%um\033[", colour8) < 0))
       return errno;
+
+    // TODO: we do not yet support 24-bit colours being input
+    UNREACHABLE();
 
   } while (0);
 
@@ -451,7 +465,7 @@ static int process_38_5_m(term_t *t, size_t id) {
   }
 
   t->style.custom_fg = true;
-  t->style.fg = id;
+  t->style.fg = colour_8_to_24((uint8_t)id);
 
   return 0;
 }
@@ -466,7 +480,7 @@ static int process_48_5_m(term_t *t, size_t id) {
   }
 
   t->style.custom_bg = true;
-  t->style.bg = id;
+  t->style.bg = colour_8_to_24((uint8_t)id);
 
   return 0;
 }
