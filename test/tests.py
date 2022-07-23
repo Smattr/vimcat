@@ -88,7 +88,7 @@ def test_combining_characters():
   assert output[len(prefix):] == b"e\xcc\x81\n", "truncated combining character"
 
 @pytest.mark.parametrize("case", (
-  "newline1.txt",
+  pytest.param("newline1.txt", marks=pytest.mark.xfail(strict=True)),
   "newline2.txt",
   "newline3.txt",
   "newline4.txt",
@@ -112,7 +112,7 @@ def test_newline(case: str):
 
   # if it was non-empty and did not end in a newline, `vimcat` should have added
   # one
-  if len(reference) > 0 and reference[-1] != "\n":
+  if len(reference) == 0 or reference[-1] != "\n":
     reference += "\n"
 
   assert output == reference, "incorrect newline handling"
