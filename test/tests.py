@@ -88,13 +88,13 @@ def test_combining_characters():
   assert output[len(prefix):] == b"e\xcc\x81\n", "truncated combining character"
 
 @pytest.mark.parametrize("case", (
-  pytest.param("newline1.txt", marks=pytest.mark.xfail(strict=True)),
+  "newline1.txt",
   "newline2.txt",
   "newline3.txt",
   "newline4.txt",
   "newline5.txt",
-  pytest.param("newline6.txt", marks=pytest.mark.xfail(strict=True)),
-  pytest.param("newline7.txt", marks=pytest.mark.xfail(strict=True)),
+  "newline6.txt",
+  "newline7.txt",
 ))
 def test_newline(case: str):
   """
