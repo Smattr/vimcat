@@ -101,8 +101,10 @@ static int style_put(style_t style, FILE *f) {
       break;
     }
 
-    // TODO: we do not yet support 24-bit colours being input
-    UNREACHABLE();
+    // otherwise, 24-bit colour
+    if (ERROR(fprintf(f, "38;2;%u;%u;%um\033[", (unsigned)style.fg.r,
+                      (unsigned)style.fg.g, (unsigned)style.fg.b) < 0))
+      return errno;
 
   } while (0);
 
@@ -136,8 +138,10 @@ static int style_put(style_t style, FILE *f) {
     if (ERROR(fprintf(f, "48;5;%um\033[", colour8) < 0))
       return errno;
 
-    // TODO: we do not yet support 24-bit colours being input
-    UNREACHABLE();
+    // otherwise, 24-bit colour
+    if (ERROR(fprintf(f, "48;2;%u;%u;%um\033[", (unsigned)style.bg.r,
+                      (unsigned)style.bg.g, (unsigned)style.bg.b) < 0))
+      return errno;
 
   } while (0);
 
