@@ -93,6 +93,8 @@ def test_combining_characters():
   "newline3.txt",
   "newline4.txt",
   "newline5.txt",
+  "newline6.txt",
+  "newline7.txt",
 ))
 def test_newline(case: str):
   """
@@ -110,7 +112,7 @@ def test_newline(case: str):
 
   # if it was non-empty and did not end in a newline, `vimcat` should have added
   # one
-  if len(reference) > 0 and reference[-1] != "\n":
+  if len(reference) == 0 or reference[-1] != "\n":
     reference += "\n"
 
   assert output == reference, "incorrect newline handling"
