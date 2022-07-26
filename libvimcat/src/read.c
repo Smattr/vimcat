@@ -43,7 +43,8 @@
 //      do not need display.
 
 /// learn the number of lines and maximum line width of a text file
-static int get_extent(const char *filename, size_t *rows, size_t *columns) {
+static int get_extent(const char *filename, size_t limit, size_t *rows,
+                      size_t *columns) {
   assert(filename != NULL);
 
   FILE *f = fopen(filename, "r");
@@ -58,6 +59,10 @@ static int get_extent(const char *filename, size_t *rows, size_t *columns) {
   int rc = 0;
 
   while (true) {
+
+    // have we scanned as far as the caller requested?
+    if (limit != 0 && lines > limit)
+      break;
 
     int c = getc(f);
     if (c == EOF)
@@ -303,7 +308,7 @@ int read_core(const char *filename, unsigned long lineno,
   // line-wrapping and/or truncating
   size_t rows = 0;
   size_t columns = 0;
-  if (ERROR((rc = get_extent(filename, &rows, &columns))))
+  if (ERROR((rc = get_extent(filename, (size_t)lineno, &rows, &columns))))
     goto done;
 
   DEBUG("%s has %zu rows and %zu columns", filename, rows, columns);
