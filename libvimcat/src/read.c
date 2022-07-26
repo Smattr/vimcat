@@ -288,7 +288,16 @@ done:
   return rc;
 }
 
-static int read_core(const char *filename,
+/** TODO
+ *
+ * \param filename Source file to read
+ * \param lineno Line number to highlight, or 0 to highlight all lines
+ * \param callback Handler for highlighted line(s)
+ * \param state State to pass as first parameter to the callback
+ * \returns 0 on success, an errno on failure, or the last non-zero return from
+ *   the caller’s callback if there was one
+ */
+static int read_core(const char *filename, unsigned long lineno,
                      int (*callback)(void *state, const char *line),
                      void *state) {
 
@@ -310,6 +319,12 @@ static int read_core(const char *filename,
 
   size_t term_rows = rows;
   size_t term_columns = columns;
+
+  // we only need a single row if we are highlighting one line
+  if (lineno > 0) {
+    rows = (size_t)lineno;
+    term_rows = 1;
+  }
 
   // we need one extra row for the Vim statusline
   ++term_rows;
@@ -342,11 +357,11 @@ static int read_core(const char *filename,
   if (ERROR((rc = term_new(&term, term_columns, term_rows))))
     goto done;
 
-  for (size_t row = 1; row <= rows;) {
+  for (size_t row = lineno == 0 ? 1 : (size_t)lineno; row <= rows;) {
 
     // if we are beyond the first iteration of this loop, clear terminal
     // contents from the last iteration
-    if (row > 1)
+    if (lineno == 0 && row > 1)
       term_reset(term);
 
     // how many rows can we render in this pass?
@@ -429,5 +444,5 @@ int vimcat_read(const char *filename,
   if (ERROR(callback == NULL))
     return EINVAL;
 
-  return read_core(filename, callback, state);
+  return read_core(filename, 0, callback, state);
 }
