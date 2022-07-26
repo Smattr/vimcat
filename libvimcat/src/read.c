@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "debug.h"
 #include "get_environ.h"
+#include "read_core.h"
 #include "term.h"
 #include <assert.h>
 #include <errno.h>
@@ -42,7 +43,8 @@
 //      do not need display.
 
 /// learn the number of lines and maximum line width of a text file
-static int get_extent(const char *filename, size_t *rows, size_t *columns) {
+static int get_extent(const char *filename, size_t limit, size_t *rows,
+                      size_t *columns) {
   assert(filename != NULL);
 
   FILE *f = fopen(filename, "r");
@@ -57,6 +59,10 @@ static int get_extent(const char *filename, size_t *rows, size_t *columns) {
   int rc = 0;
 
   while (true) {
+
+    // have we scanned as far as the caller requested?
+    if (limit != 0 && lines > limit)
+      break;
 
     int c = getc(f);
     if (c == EOF)
@@ -288,14 +294,11 @@ done:
   return rc;
 }
 
-int vimcat_read(const char *filename,
-                int (*callback)(void *state, const char *line), void *state) {
+int read_core(const char *filename, unsigned long lineno,
+              int (*callback)(void *state, const char *line), void *state) {
 
-  if (ERROR(filename == NULL))
-    return EINVAL;
-
-  if (ERROR(callback == NULL))
-    return EINVAL;
+  assert(filename != NULL);
+  assert(callback != NULL);
 
   int rc = 0;
   term_t *term = NULL;
@@ -305,13 +308,25 @@ int vimcat_read(const char *filename,
   // line-wrapping and/or truncating
   size_t rows = 0;
   size_t columns = 0;
-  if (ERROR((rc = get_extent(filename, &rows, &columns))))
+  if (ERROR((rc = get_extent(filename, (size_t)lineno, &rows, &columns))))
     goto done;
 
   DEBUG("%s has %zu rows and %zu columns", filename, rows, columns);
 
+  // was the requested line beyond the extent of the file?
+  if (ERROR(lineno != 0 && (size_t)lineno > rows)) {
+    rc = ERANGE;
+    goto done;
+  }
+
   size_t term_rows = rows;
   size_t term_columns = columns;
+
+  // we only need a single row if we are highlighting one line
+  if (lineno > 0) {
+    rows = (size_t)lineno;
+    term_rows = 1;
+  }
 
   // we need one extra row for the Vim statusline
   ++term_rows;
@@ -344,11 +359,11 @@ int vimcat_read(const char *filename,
   if (ERROR((rc = term_new(&term, term_columns, term_rows))))
     goto done;
 
-  for (size_t row = 1; row <= rows;) {
+  for (size_t row = lineno == 0 ? 1 : (size_t)lineno; row <= rows;) {
 
     // if we are beyond the first iteration of this loop, clear terminal
     // contents from the last iteration
-    if (row > 1)
+    if (lineno == 0 && row > 1)
       term_reset(term);
 
     // how many rows can we render in this pass?
@@ -420,4 +435,16 @@ done:
   term_free(&term);
 
   return rc;
+}
+
+int vimcat_read(const char *filename,
+                int (*callback)(void *state, const char *line), void *state) {
+
+  if (ERROR(filename == NULL))
+    return EINVAL;
+
+  if (ERROR(callback == NULL))
+    return EINVAL;
+
+  return read_core(filename, 0, callback, state);
 }

@@ -2,7 +2,7 @@ add_executable(test_version_le test_version_le.c)
 target_link_libraries(test_version_le PRIVATE libvimcat)
 
 find_package(Python3 COMPONENTS Interpreter)
-if(vNOT Python3_FOUND)
+if(NOT Python3_FOUND)
   add_custom_target(check
     COMMAND echo "python3 unavailable" >&2
     COMMAND false
