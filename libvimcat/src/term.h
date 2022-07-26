@@ -30,7 +30,7 @@ typedef struct term term_t;
  * \param t [out] A terminal handle on success
  * \param columns Width of the terminal to create
  * \param rows Height of the terminal to create
- * \returns 0 on success or an errno on failure
+ * \return 0 on success or an errno on failure
  */
 INTERNAL int term_new(term_t **t, size_t columns, size_t rows);
 
@@ -41,7 +41,7 @@ INTERNAL int term_new(term_t **t, size_t columns, size_t rows);
  *
  * \param t Terminal to write to
  * \param from Source to read data from
- * \returns 0 on success or an errno on failure
+ * \return 0 on success or an errno on failure
  */
 INTERNAL int term_send(term_t *t, FILE *from);
 
@@ -50,7 +50,7 @@ INTERNAL int term_send(term_t *t, FILE *from);
  * \param t Terminal to read from
  * \param row 1-indexed row to read from
  * \param line [out] Read data on success
- * \returns 0 on success or an errno on failure
+ * \return 0 on success or an errno on failure
  */
 INTERNAL int term_readline(term_t *t, size_t row, const char **line);
 

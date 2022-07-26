@@ -15,7 +15,7 @@ typedef struct {
 /** create a new in-memory buffer
  *
  * \param b Buffer to initialise
- * \returns 0 on success or an errno on failure
+ * \return 0 on success or an errno on failure
  */
 INTERNAL int buffer_open(buffer_t *b);
 

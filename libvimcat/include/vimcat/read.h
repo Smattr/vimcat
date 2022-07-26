@@ -17,7 +17,7 @@ extern "C" {
  * \param filename Source file to read
  * \param callback Handler for highlighted lines
  * \param state State to pass as first parameter to the callback
- * \returns 0 on success, an errno on failure, or the last non-zero return from
+ * \return 0 on success, an errno on failure, or the last non-zero return from
  *   the caller’s callback if there was one
  */
 VIMCAT_API int vimcat_read(const char *filename,
@@ -32,7 +32,7 @@ VIMCAT_API int vimcat_read(const char *filename,
  * \param filename Source file to read
  * \param lineno Line number of the line to highlight
  * \param [out] line Highlighted line on success
- * \returns 0 on success or an errno on failure
+ * \return 0 on success or an errno on failure
  */
 VIMCAT_API int vimcat_read_line(const char *filename, unsigned long lineno,
                                 char **line);
