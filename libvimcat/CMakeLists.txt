@@ -3,6 +3,7 @@ add_library(libvimcat
   src/debug.c
   src/get_environ.c
   src/read.c
+  src/read_line.c
   src/term.c
   ${CMAKE_CURRENT_BINARY_DIR}/version.c
   src/version_le.c)
