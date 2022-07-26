@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "debug.h"
 #include "get_environ.h"
+#include "read_core.h"
 #include "term.h"
 #include <assert.h>
 #include <errno.h>
@@ -288,18 +289,8 @@ done:
   return rc;
 }
 
-/** TODO
- *
- * \param filename Source file to read
- * \param lineno Line number to highlight, or 0 to highlight all lines
- * \param callback Handler for highlighted line(s)
- * \param state State to pass as first parameter to the callback
- * \returns 0 on success, an errno on failure, or the last non-zero return from
- *   the caller’s callback if there was one
- */
-static int read_core(const char *filename, unsigned long lineno,
-                     int (*callback)(void *state, const char *line),
-                     void *state) {
+int read_core(const char *filename, unsigned long lineno,
+              int (*callback)(void *state, const char *line), void *state) {
 
   assert(filename != NULL);
   assert(callback != NULL);
@@ -316,6 +307,12 @@ static int read_core(const char *filename, unsigned long lineno,
     goto done;
 
   DEBUG("%s has %zu rows and %zu columns", filename, rows, columns);
+
+  // was the requested line beyond the extent of the file?
+  if (ERROR(lineno != 0 && (size_t)lineno > rows)) {
+    rc = ERANGE;
+    goto done;
+  }
 
   size_t term_rows = rows;
   size_t term_columns = columns;
