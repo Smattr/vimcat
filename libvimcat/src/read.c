@@ -288,14 +288,12 @@ done:
   return rc;
 }
 
-int vimcat_read(const char *filename,
-                int (*callback)(void *state, const char *line), void *state) {
+static int read_core(const char *filename,
+                     int (*callback)(void *state, const char *line),
+                     void *state) {
 
-  if (ERROR(filename == NULL))
-    return EINVAL;
-
-  if (ERROR(callback == NULL))
-    return EINVAL;
+  assert(filename != NULL);
+  assert(callback != NULL);
 
   int rc = 0;
   term_t *term = NULL;
@@ -420,4 +418,16 @@ done:
   term_free(&term);
 
   return rc;
+}
+
+int vimcat_read(const char *filename,
+                int (*callback)(void *state, const char *line), void *state) {
+
+  if (ERROR(filename == NULL))
+    return EINVAL;
+
+  if (ERROR(callback == NULL))
+    return EINVAL;
+
+  return read_core(filename, callback, state);
 }
