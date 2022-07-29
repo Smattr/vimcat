@@ -1,5 +1,6 @@
 #include "term.h"
 #include "buffer.h"
+#include "colour.h"
 #include "compiler.h"
 #include "debug.h"
 #include <assert.h>
@@ -31,8 +32,8 @@ typedef struct {
   unsigned custom_bg : 1; ///< is `bg` non-default?
   unsigned bold : 1;      ///< is bold enabled?
   unsigned underline : 1; ///< is underline enabled?
-  uint8_t fg;             ///< foreground colour
-  uint8_t bg;             ///< background colour
+  colour_t fg;            ///< foreground colour
+  colour_t bg;            ///< background colour
 } style_t;
 
 static style_t style_default(void) { return (style_t){0}; }
@@ -51,10 +52,10 @@ static bool style_eq(style_t a, style_t b) {
   if (a.underline != b.underline)
     return false;
 
-  if (a.custom_fg && a.fg != b.fg)
+  if (a.custom_fg && !colour_eq(a.fg, b.fg))
     return false;
 
-  if (a.custom_bg && a.bg != b.bg)
+  if (a.custom_bg && !colour_eq(a.bg, b.bg))
     return false;
 
   return true;
@@ -64,57 +65,85 @@ static bool style_eq(style_t a, style_t b) {
 static int style_put(style_t style, FILE *f) {
   assert(f != NULL);
 
-  bool emitted_fg = false;
-  bool emitted_bg = false;
-
   if (ERROR(fputs("\033[", f) == EOF))
     return errno;
 
-  // does this have a foreground colour that requires 256-bit?
-  if (style.custom_fg && style.fg > 15) {
-    if (ERROR(fprintf(f, "38;5;%um\033[", (unsigned)style.fg) < 0))
-      return errno;
-    emitted_fg = true;
-  }
+  // emit the foreground colour
+  do {
 
-  // does this have a background colour that requires 256-bit?
-  if (style.custom_bg && style.bg > 15) {
-    if (ERROR(fprintf(f, "48;5;%um\033[", (unsigned)style.bg) < 0))
-      return errno;
-    emitted_bg = true;
-  }
-
-  if (!emitted_fg) {
-    if (style.custom_fg) {
-      assert(style.fg <= 15);
-      if (style.fg <= 7) {
-        if (ERROR(fprintf(f, "%u;", 30u + style.fg) < 0))
-          return errno;
-      } else {
-        if (ERROR(fprintf(f, "%u;", 90u + style.fg - 8u) < 0))
-          return errno;
-      }
-    } else {
+    // default?
+    if (!style.custom_fg) {
       if (ERROR(fputs("39;", f) == EOF))
         return errno;
+      break;
     }
-  }
 
-  if (!emitted_bg) {
-    if (style.custom_bg) {
-      assert(style.bg <= 15);
-      if (style.bg <= 7) {
-        if (ERROR(fprintf(f, "%u;", 40u + style.bg) < 0))
-          return errno;
-      } else {
-        if (ERROR(fprintf(f, "%u;", 100u + style.bg - 8u) < 0))
-          return errno;
-      }
-    } else {
+    unsigned colour8 = colour_24_to_8(style.fg);
+
+    // can we do it as a 3-bit colour?
+    if (colour8 <= 7) {
+      if (ERROR(fprintf(f, "%u;", 30 + colour8) < 0))
+        return errno;
+      break;
+    }
+
+    // can we do it as a 4-bit colour?
+    if (colour8 <= 15) {
+      if (ERROR(fprintf(f, "%u;", 90 + colour8 - 8) < 0))
+        return errno;
+      break;
+    }
+
+    // can we do it as an 8-bit colour?
+    if (colour8 <= 255) {
+      if (ERROR(fprintf(f, "38;5;%um\033[", colour8) < 0))
+        return errno;
+      break;
+    }
+
+    // otherwise, 24-bit colour
+    if (ERROR(fprintf(f, "38;2;%u;%u;%um\033[", (unsigned)style.fg.r,
+                      (unsigned)style.fg.g, (unsigned)style.fg.b) < 0))
+      return errno;
+
+  } while (0);
+
+  // emit the background colour
+  do {
+
+    // default?
+    if (!style.custom_bg) {
       if (ERROR(fputs("49;", f) == EOF))
         return errno;
+      break;
     }
-  }
+
+    unsigned colour8 = colour_24_to_8(style.bg);
+
+    // can we do it as a 3-bit colour?
+    if (colour8 <= 7) {
+      if (ERROR(fprintf(f, "%u;", 40u + colour8) < 0))
+        return errno;
+      break;
+    }
+
+    // can we do it as a 4-bit colour?
+    if (colour8 <= 15) {
+      if (ERROR(fprintf(f, "%u;", 100 + colour8 - 8) < 0))
+        return errno;
+      break;
+    }
+
+    // can we do it as an 8-bit colour?
+    if (ERROR(fprintf(f, "48;5;%um\033[", colour8) < 0))
+      return errno;
+
+    // otherwise, 24-bit colour
+    if (ERROR(fprintf(f, "48;2;%u;%u;%um\033[", (unsigned)style.bg.r,
+                      (unsigned)style.bg.g, (unsigned)style.bg.b) < 0))
+      return errno;
+
+  } while (0);
 
   if (style.bold) {
     if (ERROR(fputs("1;", f) == EOF))
@@ -430,6 +459,40 @@ static int process_J(term_t *t, size_t index, bool is_default, size_t entry) {
   return 0;
 }
 
+/// handle `<esc>[38;2;<r>;<g>;<b>m`
+static int process_38_2_m(term_t *t, size_t r, size_t g, size_t b) {
+  assert(t != NULL);
+
+  if (r > UINT8_MAX || g > UINT8_MAX || b > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[38;2;%zu;%zu;%zum", r, g, b);
+    return ENOTSUP;
+  }
+
+  t->style.custom_fg = true;
+  t->style.fg.r = (uint8_t)r;
+  t->style.fg.g = (uint8_t)g;
+  t->style.fg.b = (uint8_t)b;
+
+  return 0;
+}
+
+/// handle `<esc>[48;2;<r>;<g>;<b>m`
+static int process_48_2_m(term_t *t, size_t r, size_t g, size_t b) {
+  assert(t != NULL);
+
+  if (r > UINT8_MAX || g > UINT8_MAX || b > UINT8_MAX) {
+    DEBUG("out of range SGR attribute <esc>[48;2;%zu;%zu;%zum", r, g, b);
+    return ENOTSUP;
+  }
+
+  t->style.custom_bg = true;
+  t->style.bg.r = (uint8_t)r;
+  t->style.bg.g = (uint8_t)g;
+  t->style.bg.b = (uint8_t)b;
+
+  return 0;
+}
+
 /// handle `<esc>[38;5;<id>m`
 static int process_38_5_m(term_t *t, size_t id) {
   assert(t != NULL);
@@ -439,10 +502,8 @@ static int process_38_5_m(term_t *t, size_t id) {
     return ENOTSUP;
   }
 
-  t->style.custom_fg = true;
-  t->style.fg = id;
-
-  return 0;
+  const colour_t c = colour_8_to_24((uint8_t)id);
+  return process_38_2_m(t, c.r, c.g, c.b);
 }
 
 /// handle `<esc>[48;5;<id>m`
@@ -454,10 +515,8 @@ static int process_48_5_m(term_t *t, size_t id) {
     return ENOTSUP;
   }
 
-  t->style.custom_bg = true;
-  t->style.bg = id;
-
-  return 0;
+  const colour_t c = colour_8_to_24((uint8_t)id);
+  return process_48_2_m(t, c.r, c.g, c.b);
 }
 
 static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
@@ -611,9 +670,9 @@ static int process_csi(term_t *t, const char *csi) {
 
   if (final == 'm') {
 
-    // is this a 256-colour foreground switch?
-    bool is_256_fg = strncmp(csi, "38;5;", strlen("38;5;")) == 0;
-    if (is_256_fg) {
+    // is this an 8-bit colour foreground switch?
+    bool is_8_fg = strncmp(csi, "38;5;", strlen("38;5;")) == 0;
+    if (is_8_fg) {
       const char *idm = csi + strlen("38;5;");
       size_t id = 0;
       for (; isdigit(*idm); ++idm)
@@ -622,15 +681,61 @@ static int process_csi(term_t *t, const char *csi) {
         return process_38_5_m(t, id);
     }
 
-    // is this a 256-colour background switch?
-    bool is_256_bg = strncmp(csi, "48;5;", strlen("48;5;")) == 0;
-    if (is_256_bg) {
+    // is this an 8-bit colour background switch?
+    bool is_8_bg = strncmp(csi, "48;5;", strlen("48;5;")) == 0;
+    if (is_8_bg) {
       const char *idm = csi + strlen("48;5;");
       size_t id = 0;
       for (; isdigit(*idm); ++idm)
         id = id * 10 + *idm - '0';
       if (*idm == 'm')
         return process_48_5_m(t, id);
+    }
+
+    // is this a 24-bit colour foreground switch?
+    bool is_24_fg = strncmp(csi, "38;2;", strlen("38;2;")) == 0;
+    if (is_24_fg) {
+      do {
+        const char *idm = csi + strlen("38;2");
+        size_t r = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          r = r * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t g = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          g = g * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t b = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          b = b * 10 + *idm - '0';
+        if (*idm == 'm')
+          return process_38_2_m(t, r, g, b);
+      } while (0);
+    }
+
+    // is this a 24-bit colour background switch?
+    bool is_24_bg = strncmp(csi, "48;2;", strlen("48;2;")) == 0;
+    if (is_24_bg) {
+      do {
+        const char *idm = csi + strlen("48;2");
+        size_t r = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          r = r * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t g = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          g = g * 10 + *idm - '0';
+        if (*idm != ';')
+          break;
+        size_t b = 0;
+        for (++idm; isdigit(*idm); ++idm)
+          b = b * 10 + *idm - '0';
+        if (*idm == 'm')
+          return process_48_2_m(t, r, g, b);
+      } while (0);
     }
   }
 

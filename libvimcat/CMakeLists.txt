@@ -1,5 +1,6 @@
 add_library(libvimcat
   src/buffer.c
+  src/colour.c
   src/debug.c
   src/get_environ.c
   src/read.c
