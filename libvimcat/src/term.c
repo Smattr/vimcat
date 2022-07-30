@@ -952,7 +952,14 @@ int term_send(term_t *t, FILE *from) {
         }
         buffer_sync(&t->stage);
 
-        DEBUG("unsupported OSC sequence <esc>]%s", t->stage.base);
+        // ignore changes to the Icon Name or Window Title
+        const char *osc = t->stage.base;
+        if (osc[0] >= '0' && osc[0] <= '2' && osc[1] == ';') {
+          DEBUG("ignoring OSC sequence <esc>]%s", osc);
+          continue;
+        }
+
+        DEBUG("unsupported OSC sequence <esc>]%s", osc);
         return ENOTSUP;
       }
 
