@@ -927,6 +927,42 @@ int term_send(term_t *t, FILE *from) {
         continue;
       }
 
+      // is this an Operating System Command?
+      if (eat_if(from, ']')) {
+
+        // clear our temporary buffer to stage the sequence
+        buffer_clear(&t->stage);
+
+        // drain to the terminator of the OSC sequence
+        while (true) {
+
+          int c = getc(from);
+          if (c == EOF) {
+            // malformed sequence, as we have not yet seen the terminator
+            return EBADMSG;
+          }
+
+          // was this the OSC sequence terminator
+          if (c == 0x7 || c == 0x9c)
+            break;
+
+          // stage this character
+          if (ERROR(fputc(c, t->stage.f) == EOF))
+            return errno;
+        }
+        buffer_sync(&t->stage);
+
+        // ignore changes to the Icon Name or Window Title
+        const char *osc = t->stage.base;
+        if (osc[0] >= '0' && osc[0] <= '2' && osc[1] == ';') {
+          DEBUG("ignoring OSC sequence <esc>]%s", osc);
+          continue;
+        }
+
+        DEBUG("unsupported OSC sequence <esc>]%s", osc);
+        return ENOTSUP;
+      }
+
       DEBUG("unsupported escape sequence");
       return ENOTSUP;
     }
