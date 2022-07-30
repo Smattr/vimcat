@@ -13,8 +13,9 @@ from typing import Optional
 @pytest.mark.parametrize("no_color", (False, True))
 @pytest.mark.parametrize("t_Co", (2, 8, 16, 88, 256, 16777216))
 @pytest.mark.parametrize("termguicolors", (False, True))
+@pytest.mark.parametrize("title", (False, True))
 def test_colour(colour: Optional[str], no_color: bool, t_Co: int,
-                termguicolors: bool):
+                termguicolors: bool, title: bool):
   """
   `vimcat` should obey the user’s colour preferences
   """
@@ -32,6 +33,8 @@ def test_colour(colour: Optional[str], no_color: bool, t_Co: int,
       f.write(f"syntax on\nset t_Co={t_Co}\n")
       if termguicolors:
         f.write("set termguicolors\n")
+      if title:
+        f.write("set title\n")
     env["HOME"] = tmp
 
     args = ["vimcat", "--debug"]
