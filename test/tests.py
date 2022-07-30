@@ -5,7 +5,6 @@ Vimcat test suite
 import os
 import pytest
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -14,8 +13,8 @@ from typing import Optional
 @pytest.mark.parametrize("t_Co", (2, 8, 16, 88, 256, 16777216))
 @pytest.mark.parametrize("termguicolors", (False, True))
 @pytest.mark.parametrize("title", (False, True))
-def test_colour(colour: Optional[str], no_color: bool, t_Co: int,
-                termguicolors: bool, title: bool):
+def test_colour(tmp_path: Path, colour: Optional[str], no_color: bool,
+                t_Co: int, termguicolors: bool, title: bool):
   """
   `vimcat` should obey the user’s colour preferences
   """
@@ -26,24 +25,22 @@ def test_colour(colour: Optional[str], no_color: bool, t_Co: int,
   elif "NO_COLOR" in env:
     del env["NO_COLOR"]
 
-  with tempfile.TemporaryDirectory() as tmp:
+  # write a vimrc to force syntax highlighting and 8-bit colour
+  with open(tmp_path / ".vimrc", "wt") as f:
+    f.write(f"syntax on\nset t_Co={t_Co}\n")
+    if termguicolors:
+      f.write("set termguicolors\n")
+    if title:
+      f.write("set title\n")
+  env["HOME"] = str(tmp_path)
 
-    # write a vimrc to force syntax highlighting and 8-bit colour
-    with open(Path(tmp) / ".vimrc", "wt") as f:
-      f.write(f"syntax on\nset t_Co={t_Co}\n")
-      if termguicolors:
-        f.write("set termguicolors\n")
-      if title:
-        f.write("set title\n")
-    env["HOME"] = tmp
+  args = ["vimcat", "--debug"]
+  if colour is not None:
+    args += [f"--colour={colour}"]
 
-    args = ["vimcat", "--debug"]
-    if colour is not None:
-      args += [f"--colour={colour}"]
-
-    # highlight a C file
-    source = Path(__file__).parent / "test_version_le.c"
-    output = subprocess.check_output(args + ["--", source], env=env)
+  # highlight a C file
+  source = Path(__file__).parent / "test_version_le.c"
+  output = subprocess.check_output(args + ["--", source], env=env)
 
   # was there a Control Sequence Identifier in the output?
   contains_csi = b"\033[" in output
@@ -66,7 +63,7 @@ maximum number of terminal columns Vim will render
 """
 
 @pytest.mark.xfail(strict=True)
-def test_combining_characters():
+def test_combining_characters(tmp_path: Path):
   """
   UTF-8 combining characters should be rendered in the correct terminal cell
   """
@@ -77,18 +74,17 @@ def test_combining_characters():
   # border of the maximum column Vim will render to. So if we get the combining
   # right, this should be visible, and if not it will be invisible.
 
-  with tempfile.TemporaryDirectory() as tmp:
-    sample = Path(tmp) / "input.txt"
+  sample = tmp_path / "input.txt"
 
-    # write a file containing a trailing combining character
-    with open(sample, "wb") as f:
-      for _ in range(VIM_COLUMN_LIMIT - 1):
-        f.write(b" ")
-      f.write(b"e")
-      f.write(b"\xcc\x81")
+  # write a file containing a trailing combining character
+  with open(sample, "wb") as f:
+    for _ in range(VIM_COLUMN_LIMIT - 1):
+      f.write(b" ")
+    f.write(b"e")
+    f.write(b"\xcc\x81")
 
-    # ask `vimcat` to render it
-    output = subprocess.check_output(["vimcat", "--debug", sample])
+  # ask `vimcat` to render it
+  output = subprocess.check_output(["vimcat", "--debug", sample])
 
   prefix = b" " * (VIM_COLUMN_LIMIT - 1)
   assert output.startswith(prefix), "incorrect leading space"
@@ -147,15 +143,14 @@ def test_newline(case: str):
 
   assert output == reference, "incorrect newline handling"
 
-def test_no_file():
+def test_no_file(tmp_path: Path):
   """
   passing a non-existent file should produce no output and an error message
   """
 
-  with tempfile.TemporaryDirectory() as tmp:
-    input = Path(tmp) / "no-file.txt"
+  input = tmp_path / "no-file.txt"
 
-    p = subprocess.run(["vimcat", input], capture_output=True)
+  p = subprocess.run(["vimcat", input], capture_output=True)
 
   assert p.returncode != 0, "EXIT_SUCCESS status with non-existent file"
   assert p.stdout == b"", "output for non-existent file"
@@ -170,22 +165,21 @@ maximum number of terminal lines Vim will render
   list(range(VIM_LINE_LIMIT - 2, VIM_LINE_LIMIT + 3)) +
   list(range(2 * VIM_LINE_LIMIT - 2, 2 * VIM_LINE_LIMIT + 3))
 )
-def test_tall(height: int):
+def test_tall(tmp_path: Path, height: int):
   """
   check displaying a file near the boundaries of Vim’s line limit
   """
 
-  with tempfile.TemporaryDirectory() as tmp:
-    sample = Path(tmp) / "input.txt"
+  sample = tmp_path / "input.txt"
 
-    # setup a file with many lines
-    with open(sample, "wt") as f:
-      for i in range(height):
-        f.write(f"line {i}\n")
+  # setup a file with many lines
+  with open(sample, "wt") as f:
+    for i in range(height):
+      f.write(f"line {i}\n")
 
-    # ask `vimcat` to display it
-    output = subprocess.check_output(["vimcat", "--debug", sample],
-                                     universal_newlines=True)
+  # ask `vimcat` to display it
+  output = subprocess.check_output(["vimcat", "--debug", sample],
+                                   universal_newlines=True)
 
   # confirm we got what we expected
   i = 0
@@ -229,23 +223,22 @@ def test_version_le():
 
 @pytest.mark.parametrize("width",
   list(range(VIM_COLUMN_LIMIT - 2, VIM_COLUMN_LIMIT + 3)))
-def test_wide(width: int):
+def test_wide(tmp_path: Path, width: int):
   """
   at least as many columns as the Vim render limit should be displayed
   """
 
-  with tempfile.TemporaryDirectory() as tmp:
-    sample = Path(tmp) / "input.txt"
+  sample = tmp_path / "input.txt"
 
-    # setup a file with a wide line:
-    with open(sample, "wt") as f:
-      for _ in range(width):
-        f.write("a")
-      f.write("\n")
+  # setup a file with a wide line:
+  with open(sample, "wt") as f:
+    for _ in range(width):
+      f.write("a")
+    f.write("\n")
 
-    # ask `vimcat` to display it
-    output = subprocess.check_output(["vimcat", "--debug", sample],
-                                     universal_newlines=True)
+  # ask `vimcat` to display it
+  output = subprocess.check_output(["vimcat", "--debug", sample],
+                                   universal_newlines=True)
 
   # confirm we got at least as many columns as expected
   if width <= VIM_COLUMN_LIMIT:
