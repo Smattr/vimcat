@@ -12,7 +12,9 @@ from typing import Optional
 @pytest.mark.parametrize("colour", (None, "always", "auto", "never"))
 @pytest.mark.parametrize("no_color", (False, True))
 @pytest.mark.parametrize("t_Co", (2, 8, 16, 88, 256, 16777216))
-def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
+@pytest.mark.parametrize("termguicolors", (False, True))
+def test_colour(colour: Optional[str], no_color: bool, t_Co: int,
+                termguicolors: bool):
   """
   `vimcat` should obey the user’s colour preferences
   """
@@ -26,7 +28,10 @@ def test_colour(colour: Optional[str], no_color: bool, t_Co: int):
   with tempfile.TemporaryDirectory() as tmp:
 
     # write a vimrc to force syntax highlighting and 8-bit colour
-    (Path(tmp) / ".vimrc").write_text(f"syntax on\nset t_Co={t_Co}\n")
+    with open(Path(tmp) / ".vimrc", "wt") as f:
+      f.write(f"syntax on\nset t_Co={t_Co}\n")
+      if termguicolors:
+        f.write("set termguicolors\n")
     env["HOME"] = tmp
 
     args = ["vimcat", "--debug"]
