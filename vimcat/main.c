@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <vimcat/vimcat.h>
 
 // enable colour highlighting?
@@ -40,6 +41,43 @@ static int print(void *ignored, const char *line) {
     putchar('\n');
 
   return 0;
+}
+
+/// scary text to be shown to users on first run
+static const char RIOT_ACT[] =
+    "${HOME}/.vimcatrc not found; aborting\n"
+    "\n"
+    "To display a file as Vim would, Vimcat runs Vim as a subprocess. This\n"
+    "means your ~/.vimrc will be evaluated along with any plugins you have\n"
+    "enabled, custom syntax, etc. This can be surprising to new users. Some\n"
+    "Vim features can even enable arbitrary code execution, whether\n"
+    "intentionally or unintentionally (e.g. CVE-2002-1377, CVE-2016-1248,\n"
+    "CVE-2019-12735). So running Vimcat on an untrusted file has some\n"
+    "associated risk.\n"
+    "\n"
+    "To acknowledge that you understand these risks and want to run Vimcat,\n"
+    "create a text file .vimcatrc in your ${HOME} directory.\n";
+
+/// check the user has indicated they have read the riot act
+static void check_consent(void) {
+
+  bool have_vimcatrc = false;
+
+  const char *home = getenv("HOME");
+  if (home != NULL) {
+    char *vimcatrc = NULL;
+    if (asprintf(&vimcatrc, "%s/.vimcatrc", home) < 0) {
+      fprintf(stderr, "out of memory\n");
+      exit(EXIT_FAILURE);
+    }
+    have_vimcatrc = access(vimcatrc, F_OK) == 0;
+    free(vimcatrc);
+  }
+
+  if (!have_vimcatrc) {
+    fputs(RIOT_ACT, stderr);
+    exit(EXIT_FAILURE);
+  }
 }
 
 int main(int argc, char **argv) {
@@ -93,6 +131,8 @@ int main(int argc, char **argv) {
       return EXIT_FAILURE;
     }
   }
+
+  check_consent();
 
   // check `$NO_COLOR` as a fallback mechanism
   if (colour == AUTO) {
