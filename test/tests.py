@@ -95,6 +95,28 @@ def test_combining_characters():
 
   assert output[len(prefix):] == b"e\xcc\x81\n", "truncated combining character"
 
+@pytest.mark.parametrize("debug", (False, True))
+@pytest.mark.xfail(strict=True)
+def test_consent(tmp_path: Path, debug: bool):
+  """
+  Vimcat should refuse to run without ~/.vimcatrc
+  """
+
+  env = os.environ.copy()
+  env["HOME"] = str(tmp_path)
+
+  # pick an arbitrary file to cat
+  subject = Path(__file__).resolve()
+
+  # run vimcat
+  args = ["vimcat"]
+  if debug:
+    args += ["--debug"]
+  args += [subject]
+  ret = subprocess.call(args, env=env)
+
+  assert ret != 0, "vimcat ran successfully without ~/.vimcatrc"
+
 @pytest.mark.parametrize("case", (
   "newline1.txt",
   "newline2.txt",
