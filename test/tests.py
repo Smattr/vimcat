@@ -6,7 +6,22 @@ import os
 import pytest
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
+
+def make_vimcatrc(home: Path):
+  """
+  create an empty ~/.vimcatrc to pass the consent check
+  """
+  (home / ".vimcatrc").write_text("")
+
+def set_home(home: Path) -> Dict[str, str]:
+  """
+  setup an environment using the given path as ${HOME}
+  """
+  env = os.environ.copy()
+  env["HOME"] = str(home)
+  make_vimcatrc(home)
+  return env
 
 @pytest.mark.parametrize("colour", (None, "always", "auto", "never"))
 @pytest.mark.parametrize("no_color", (False, True))
@@ -19,7 +34,7 @@ def test_colour(tmp_path: Path, colour: Optional[str], no_color: bool,
   `vimcat` should obey the user’s colour preferences
   """
 
-  env = os.environ.copy()
+  env = set_home(tmp_path)
   if no_color:
     env["NO_COLOR"] = "1"
   elif "NO_COLOR" in env:
@@ -32,7 +47,6 @@ def test_colour(tmp_path: Path, colour: Optional[str], no_color: bool,
       f.write("set termguicolors\n")
     if title:
       f.write("set title\n")
-  env["HOME"] = str(tmp_path)
 
   args = ["vimcat", "--debug"]
   if colour is not None:
@@ -83,8 +97,10 @@ def test_combining_characters(tmp_path: Path):
     f.write(b"e")
     f.write(b"\xcc\x81")
 
+  env = set_home(tmp_path)
+
   # ask `vimcat` to render it
-  output = subprocess.check_output(["vimcat", "--debug", sample])
+  output = subprocess.check_output(["vimcat", "--debug", sample], env=env)
 
   prefix = b" " * (VIM_COLUMN_LIMIT - 1)
   assert output.startswith(prefix), "incorrect leading space"
@@ -98,6 +114,7 @@ def test_consent(tmp_path: Path, debug: bool):
   Vimcat should refuse to run without ~/.vimcatrc
   """
 
+  # like `set_home` but exclude creating a ~/.vimcatrc
   env = os.environ.copy()
   env["HOME"] = str(tmp_path)
 
@@ -122,16 +139,18 @@ def test_consent(tmp_path: Path, debug: bool):
   "newline6.txt",
   "newline7.txt",
 ))
-def test_newline(case: str):
+def test_newline(tmp_path: Path, case: str):
   """
   check `vimcat` deals with various newline ending/not-ending correctly
   """
+
+  env = set_home(tmp_path)
 
   # run `vimcat` on some sample input
   input = Path(__file__).parent / case
   assert input.exists(), "missing test case input"
   output = subprocess.check_output(["vimcat", "--debug", input],
-                                   universal_newlines=True)
+                                   universal_newlines=True, env=env)
 
   # read the sample in Python
   reference = input.read_text()
@@ -149,8 +168,9 @@ def test_no_file(tmp_path: Path):
   """
 
   input = tmp_path / "no-file.txt"
+  env = set_home(tmp_path)
 
-  p = subprocess.run(["vimcat", input], capture_output=True)
+  p = subprocess.run(["vimcat", input], capture_output=True, env=env)
 
   assert p.returncode != 0, "EXIT_SUCCESS status with non-existent file"
   assert p.stdout == b"", "output for non-existent file"
@@ -171,6 +191,7 @@ def test_tall(tmp_path: Path, height: int):
   """
 
   sample = tmp_path / "input.txt"
+  env = set_home(tmp_path)
 
   # setup a file with many lines
   with open(sample, "wt") as f:
@@ -179,7 +200,7 @@ def test_tall(tmp_path: Path, height: int):
 
   # ask `vimcat` to display it
   output = subprocess.check_output(["vimcat", "--debug", sample],
-                                   universal_newlines=True)
+                                   universal_newlines=True, env=env)
 
   # confirm we got what we expected
   i = 0
@@ -197,16 +218,18 @@ def test_tall(tmp_path: Path, height: int):
   "utf-8_5.txt",
   "utf-8_6.txt",
 ))
-def test_utf8(case: str):
+def test_utf8(tmp_path: Path, case: str):
   """
   check `vimcat` can deal with UTF-8 characters of any length
   """
+
+  env = set_home(tmp_path)
 
   # run `vimcat` on a sample containing characters of various lengths
   input = Path(__file__).parent / case
   assert input.exists(), "missing test case input"
   output = subprocess.check_output(["vimcat", "--debug", input],
-                                   universal_newlines=True)
+                                   universal_newlines=True, env=env)
 
   # read the sample with Python, which we know understands UTF-8 correctly
   reference = input.read_text(encoding="utf-8").strip()
@@ -229,6 +252,7 @@ def test_wide(tmp_path: Path, width: int):
   """
 
   sample = tmp_path / "input.txt"
+  env = set_home(tmp_path)
 
   # setup a file with a wide line:
   with open(sample, "wt") as f:
@@ -238,7 +262,7 @@ def test_wide(tmp_path: Path, width: int):
 
   # ask `vimcat` to display it
   output = subprocess.check_output(["vimcat", "--debug", sample],
-                                   universal_newlines=True)
+                                   universal_newlines=True, env=env)
 
   # confirm we got at least as many columns as expected
   if width <= VIM_COLUMN_LIMIT:
