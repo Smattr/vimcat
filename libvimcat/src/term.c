@@ -927,6 +927,35 @@ int term_send(term_t *t, FILE *from) {
         continue;
       }
 
+      // is this an Operating System Command?
+      if (eat_if(from, ']')) {
+
+        // clear our temporary buffer to stage the sequence
+        buffer_clear(&t->stage);
+
+        // drain to the terminator of the OSC sequence
+        while (true) {
+
+          int c = getc(from);
+          if (c == EOF) {
+            // malformed sequence, as we have not yet seen the terminator
+            return EBADMSG;
+          }
+
+          // was this the OSC sequence terminator
+          if (c == 0x7 || c == 0x9c)
+            break;
+
+          // stage this character
+          if (ERROR(fputc(c, t->stage.f) == EOF))
+            return errno;
+        }
+        buffer_sync(&t->stage);
+
+        DEBUG("unsupported OSC sequence <esc>]%s", t->stage.base);
+        return ENOTSUP;
+      }
+
       DEBUG("unsupported escape sequence");
       return ENOTSUP;
     }
