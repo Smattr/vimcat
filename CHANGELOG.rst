@@ -1,6 +1,22 @@
 Change log
 ==========
 
+v2022.07.30
+-----------
+
+* Bug fix: handling of newline characters has been corrected (commit
+  3eaffb0ed3e6612ace7a7f1be6f6e5899cb194d8).
+* A first-run check has been introduced to warn users of risks (commit
+  e4517040c357c5289ad2dd00325b65fdd54d431c).
+* 24-bit colour is supported (commit f0418618dfd62d70123f7503338c973fccb37e82).
+* ``set title`` in your .vimrc no longer causes failures (commit
+  7cb994645581eac8346b135fc2614cc6a3f54221).
+* ``--debug`` prints more information (commits
+  9447055479b1850a1ee9eea9801d404cceece39f,
+  71bfcd997e84012d30ea0a7172118e83fcec975e).
+* libvimcat: an API function for reading a single line was added (commit
+  9e311d23c3d27cc4b64ef73471fbab1a37249f8a).
+
 v2022.06.23
 -----------
 
