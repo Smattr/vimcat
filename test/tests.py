@@ -108,7 +108,6 @@ def test_combining_characters(tmp_path: Path):
   assert output[len(prefix):] == b"e\xcc\x81\n", "truncated combining character"
 
 @pytest.mark.parametrize("debug", (False, True))
-@pytest.mark.xfail(strict=True)
 def test_consent(tmp_path: Path, debug: bool):
   """
   Vimcat should refuse to run without ~/.vimcatrc
