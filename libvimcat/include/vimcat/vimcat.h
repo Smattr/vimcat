@@ -5,5 +5,6 @@
 #endif
 
 #include <vimcat/debug.h>
+#include <vimcat/have_vim.h>
 #include <vimcat/read.h>
 #include <vimcat/version.h>
