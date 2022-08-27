@@ -177,7 +177,6 @@ def test_no_file(tmp_path: Path):
   assert p.stdout == b"", "output for non-existent file"
   assert p.stderr != b"", "no error message for non-existent file"
 
-@pytest.mark.xfail(strict=True)
 def test_no_vim(tmp_path: Path):
   """
   if `vim` is not installed, we should get a reasonable error message

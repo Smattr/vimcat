@@ -148,6 +148,11 @@ int main(int argc, char **argv) {
   if (debug)
     vimcat_debug_on();
 
+  if (!vimcat_have_vim()) {
+    fprintf(stderr, "vim not found\n");
+    return EXIT_FAILURE;
+  }
+
   for (size_t i = optind; i < (size_t)argc; ++i) {
     int rc = vimcat_read(argv[i], print, NULL);
     if (rc != 0) {
