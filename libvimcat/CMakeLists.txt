@@ -3,6 +3,7 @@ add_library(libvimcat
   src/colour.c
   src/debug.c
   src/get_environ.c
+  src/have_vim.c
   src/read.c
   src/read_line.c
   src/term.c
