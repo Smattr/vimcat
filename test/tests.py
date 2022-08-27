@@ -4,6 +4,8 @@ Vimcat test suite
 
 import os
 import pytest
+import re
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, Optional
@@ -174,6 +176,31 @@ def test_no_file(tmp_path: Path):
   assert p.returncode != 0, "EXIT_SUCCESS status with non-existent file"
   assert p.stdout == b"", "output for non-existent file"
   assert p.stderr != b"", "no error message for non-existent file"
+
+@pytest.mark.xfail(strict=True)
+def test_no_vim(tmp_path: Path):
+  """
+  if `vim` is not installed, we should get a reasonable error message
+  """
+  env = set_home(tmp_path)
+
+  # construct an absolute path to vimcat
+  vimcat = shutil.which("vimcat")
+  assert vimcat is not None, "vimcat not found"
+  vimcat = Path(vimcat).resolve()
+
+  # blank `$PATH` so `vim` cannot be found
+  env["PATH"] = ""
+
+  # run `vimcat` on an arbitrary file
+  src = Path(__file__).resolve()
+  p = subprocess.run([vimcat, src], capture_output=True,
+                     universal_newlines=True, env=env)
+
+  assert p.returncode != 0, \
+    "vimcat exited with success even without vim available"
+  assert re.search(r"\bvim\b", p.stderr) is not None, \
+    "error message did not mention vim"
 
 VIM_LINE_LIMIT = 1000
 """
