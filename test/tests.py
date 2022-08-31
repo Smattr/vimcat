@@ -36,6 +36,9 @@ def test_colour(tmp_path: Path, colour: Optional[str], no_color: bool,
   `vimcat` should obey the user’s colour preferences
   """
 
+  if termguicolors and "256color" not in os.environ.get("TERM", ""):
+    pytest.skip("no 256-color support in this terminal")
+
   env = set_home(tmp_path)
   if no_color:
     env["NO_COLOR"] = "1"
