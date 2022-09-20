@@ -993,7 +993,7 @@ int term_send(term_t *t, FILE *from) {
   return 0;
 }
 
-int term_readline(term_t *t, size_t row, const char **line) {
+int term_readline(term_t *t, size_t row, char **line) {
 
   PRECONDITION(t != NULL);
   PRECONDITION(row > 0);

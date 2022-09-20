@@ -420,7 +420,7 @@ int read_core(const char *filename, unsigned long lineno,
     // pass terminal lines back to the caller
     for (size_t y = 1; y <= vim_rows; ++y) {
 
-      const char *line = NULL;
+      char *line = NULL;
       if (ERROR((rc = term_readline(term, y, &line))))
         goto done;
 

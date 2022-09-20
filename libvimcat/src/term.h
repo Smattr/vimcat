@@ -47,12 +47,15 @@ INTERNAL int term_send(term_t *t, FILE *from);
 
 /** read a line of data from the terminal
  *
+ * The returned \p line is only valid until the next \p term_* operation. The
+ * caller should not free this point, but they can modify the pointed to data.
+ *
  * \param t Terminal to read from
  * \param row 1-indexed row to read from
  * \param line [out] Read data on success
  * \return 0 on success or an errno on failure
  */
-INTERNAL int term_readline(term_t *t, size_t row, const char **line);
+INTERNAL int term_readline(term_t *t, size_t row, char **line);
 
 /** wipe any data previously rendered to this terminal
  *
