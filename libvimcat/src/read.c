@@ -295,7 +295,7 @@ done:
 }
 
 int read_core(const char *filename, unsigned long lineno,
-              int (*callback)(void *state, const char *line), void *state) {
+              int (*callback)(void *state, char *line), void *state) {
 
   assert(filename != NULL);
   assert(callback != NULL);
@@ -420,7 +420,7 @@ int read_core(const char *filename, unsigned long lineno,
     // pass terminal lines back to the caller
     for (size_t y = 1; y <= vim_rows; ++y) {
 
-      const char *line = NULL;
+      char *line = NULL;
       if (ERROR((rc = term_readline(term, y, &line))))
         goto done;
 
@@ -437,8 +437,8 @@ done:
   return rc;
 }
 
-int vimcat_read(const char *filename,
-                int (*callback)(void *state, const char *line), void *state) {
+int vimcat_read(const char *filename, int (*callback)(void *state, char *line),
+                void *state) {
 
   if (ERROR(filename == NULL))
     return EINVAL;
