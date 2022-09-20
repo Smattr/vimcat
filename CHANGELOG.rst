@@ -1,6 +1,18 @@
 Change log
 ==========
 
+v2022.09.19
+-----------
+* The ``vimcat_read`` callback now accepts a non-const ``line``
+  parameter. This allows callers to modify the pointed to data, should they find
+  it convenient (commit 7a4ded792e0ef47ba356dc504dff8dd4f8fff64e).
+* A new API function ``vimcat_have_vim`` has been added to check for Vim
+  availability (commit bfae8955b2445ae6d3c7e58d5cd75a7684bd091f).
+* ``vimcat`` now checks for Vim availability before attempting highlighting
+  (commit 58ed56403e204ed9824c22c84e8b0a678bf1f332).
+* When running out of memory, ``vimcat --help`` will now more reliably report
+  this (commit 36ba8c93f76f6fe7604f70ee611dbae555fea351).
+
 v2022.07.30
 -----------
 
