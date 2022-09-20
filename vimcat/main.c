@@ -11,7 +11,7 @@
 // enable colour highlighting?
 static enum { ALWAYS, AUTO, NEVER } colour = AUTO;
 
-static int print(void *ignored, const char *line) {
+static int print(void *ignored, char *line) {
 
   (void)ignored;
 

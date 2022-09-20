@@ -5,7 +5,7 @@
 #include <string.h>
 #include <vimcat/read.h>
 
-static int accept_line(void *state, const char *line) {
+static int accept_line(void *state, char *line) {
 
   assert(state != NULL);
   assert(line != NULL);

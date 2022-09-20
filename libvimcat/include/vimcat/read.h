@@ -14,6 +14,10 @@ extern "C" {
  * ANSI terminal escape sequences. Iteration through the file will be terminated
  * when the end of file is reached or the caller’s callback returns non-zero.
  *
+ * The callback should not free the \p line passed to it, but it is free to
+ * modify the pointed to data. \p line is only valid until \p callback returns.
+ * After that, the underlying memory may be repurposed.
+ *
  * \param filename Source file to read
  * \param callback Handler for highlighted lines
  * \param state State to pass as first parameter to the callback
@@ -21,7 +25,7 @@ extern "C" {
  *   the caller’s callback if there was one
  */
 VIMCAT_API int vimcat_read(const char *filename,
-                           int (*callback)(void *state, const char *line),
+                           int (*callback)(void *state, char *line),
                            void *state);
 
 /** Vim-highlight a single line in the given file

@@ -295,7 +295,7 @@ done:
 }
 
 int read_core(const char *filename, unsigned long lineno,
-              int (*callback)(void *state, const char *line), void *state) {
+              int (*callback)(void *state, char *line), void *state) {
 
   assert(filename != NULL);
   assert(callback != NULL);
@@ -437,8 +437,8 @@ done:
   return rc;
 }
 
-int vimcat_read(const char *filename,
-                int (*callback)(void *state, const char *line), void *state) {
+int vimcat_read(const char *filename, int (*callback)(void *state, char *line),
+                void *state) {
 
   if (ERROR(filename == NULL))
     return EINVAL;

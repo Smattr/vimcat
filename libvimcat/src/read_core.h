@@ -12,5 +12,4 @@
  *   the caller’s callback if there was one
  */
 INTERNAL int read_core(const char *filename, unsigned long lineno,
-                       int (*callback)(void *state, const char *line),
-                       void *state);
+                       int (*callback)(void *state, char *line), void *state);
