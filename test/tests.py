@@ -49,7 +49,10 @@ def test_colour(tmp_path: Path, colour: Optional[str], no_color: bool,
   with open(tmp_path / ".vimrc", "wt") as f:
     f.write(f"syntax on\nset t_Co={t_Co}\n")
     if termguicolors:
-      f.write("set termguicolors\n")
+      f.write("set termguicolors\n"
+              # we also need to teach Vim how to colourise
+              'let &t_8f = "\\<Esc>[38;2;%lu;%lu;%lum"\n'
+              'let &t_8b = "\\<Esc>[48;2;%lu;%lu;%lum"\n')
     if title:
       f.write("set title\n")
 
