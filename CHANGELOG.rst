@@ -1,6 +1,11 @@
 Change log
 ==========
 
+v2022.10.22
+-----------
+* A missing ``#include`` in libvimcat source was fixed (commit
+  526131ae02b2cc727691297659c83748fcba109c).
+
 v2022.09.19
 -----------
 * The ``vimcat_read`` callback now accepts a non-const ``line``
