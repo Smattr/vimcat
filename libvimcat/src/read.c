@@ -203,17 +203,17 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   (void)snprintf(set_columns, sizeof(set_columns), "+set columns=%zu", columns);
 
   // prefix of the command we will run
-  enum { ARGS = 17 };
+  enum { ARGS = 13 };
   char const *argv[ARGS] = {
       "vim",
-      "-R",                // read-only mode
-      "--not-a-term",      // do not check whether std* is a TTY
-      "-X",                // do not connect to X server
-      "+set nonumber",     // hide line numbers in case the user has them on
-      "+set laststatus=0", // hide status footer line
-      "+set noruler",      // hide row,column position footer
-      "+set nowrap",       // disable text wrapping in case we have long rows
-      "+set scrolloff=0",  // make `z<CR>` scroll cursor row to the top
+      "-R",           // read-only mode
+      "--not-a-term", // do not check whether std* is a TTY
+      "-X",           // do not connect to X server
+      "+set nonumber" // hide line numbers in case the user has them on
+      " laststatus=0" // hide status footer line
+      " noruler"      // hide row,column position footer
+      " nowrap"       // disable text wrapping in case we have long rows
+      " scrolloff=0", // make `z<CR>` scroll cursor row to the top
       set_rows,
       set_columns,
   };
