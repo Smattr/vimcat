@@ -213,7 +213,8 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
       " laststatus=0" // hide status footer line
       " noruler"      // hide row,column position footer
       " nowrap"       // disable text wrapping in case we have long rows
-      " scrolloff=0", // make `z<CR>` scroll cursor row to the top
+      " scrolloff=0"  // make `z<CR>` scroll cursor row to the top
+      " nohlsearch",  // turn off highlighting from prior searches
       set_rows,
       set_columns,
   };
