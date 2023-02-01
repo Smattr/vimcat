@@ -39,13 +39,13 @@ task:
       test_script: uname -sr && env && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
 
     - name: macOS
-      osx_instance:
-        image: monterey-xcode-13.3
+      macos_instance:
+        image: ghcr.io/cirruslabs/macos-ventura-base:latest
       environment:
         CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: pip3 install pytest
-      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
+      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && sudo cmake --build . -- install
 
     - name: clang-format
       container:
