@@ -1,6 +1,11 @@
 Change log
 ==========
 
+v2023.01.31
+-----------
+* Highlighting of search terms from a previous Vim session is now suppressed
+  (commit ac8f369182084ab839655ff402beb400b51f89a5).
+
 v2022.10.22
 -----------
 * A missing ``#include`` in libvimcat source was fixed (commit
