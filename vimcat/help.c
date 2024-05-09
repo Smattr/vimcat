@@ -80,8 +80,7 @@ int help(void) {
   }
 
   // wait for man to finish
-  int ignored;
-  (void)waitpid(man, &ignored, 0);
+  (void)waitpid(man, (int[]){0}, 0);
 
   // cleanup
 done:
