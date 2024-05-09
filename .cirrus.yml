@@ -40,11 +40,11 @@ task:
 
     - name: macOS
       macos_instance:
-        image: ghcr.io/cirruslabs/macos-ventura-base:latest
+        image: ghcr.io/cirruslabs/macos-sonoma-base:latest
       environment:
         CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined
         UBSAN_OPTIONS: print_stacktrace=1
-      install_script: pip3 install pytest
+      install_script: brew update && brew install python3 && python3 -m pip install --break-system-packages pytest
       test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && sudo cmake --build . -- install
 
     - name: clang-format
