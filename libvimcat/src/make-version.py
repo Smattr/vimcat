@@ -123,21 +123,23 @@ def main(args: [str]) -> int:
 
   known_versions = ", ".join(f'"{v}"' for v in reversed(list(all_versions())))
 
-  new =  '#include <stddef.h>\n'                                               \
-         '#include <vimcat/version.h>\n'                                       \
-         '\n'                                                                  \
-         'const char *vimcat_version(void) {\n'                                \
-        f'  return "{version}";\n'                                             \
-         '}\n'                                                                 \
-         '\n'                                                                  \
-         '#define INTERNAL __attribute__((visibility("internal")))\n'          \
-         '\n'                                                                  \
-         'const char *KNOWN_VERSIONS[] INTERNAL = {\n'                         \
-        f'  {known_versions}\n'                                                \
-         '};\n'                                                                \
-         '\n'                                                                  \
-         'size_t KNOWN_VERSIONS_LENGTH INTERNAL =\n'                           \
-         '  sizeof(KNOWN_VERSIONS) / sizeof(KNOWN_VERSIONS[0]);'
+  new = f"""\
+#include <stddef.h>
+#include <vimcat/version.h>
+
+const char *vimcat_version(void) {{
+  return "{version}";
+}}
+
+#define INTERNAL __attribute__((visibility("internal")))
+
+const char *KNOWN_VERSIONS[] INTERNAL = {{
+  {known_versions}
+}};
+
+size_t KNOWN_VERSIONS_LENGTH INTERNAL =
+  sizeof(KNOWN_VERSIONS) / sizeof(KNOWN_VERSIONS[0]);
+"""
 
   # If the version has changed, update the output. Otherwise we leave the old
   # contents – and more importantly, the timestamp – intact.
