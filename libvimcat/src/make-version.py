@@ -131,7 +131,11 @@ const char *vimcat_version(void) {{
   return "{version}";
 }}
 
+#ifdef __GNUC__
 #define INTERNAL __attribute__((visibility("internal")))
+#else
+#define INTERNAL /* nothing */
+#endif
 
 const char *KNOWN_VERSIONS[] INTERNAL = {{
   {known_versions}
