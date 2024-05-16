@@ -13,7 +13,13 @@ extern "C" {
 #endif
 
 #ifndef VIMCAT_API
+#ifdef __GNUC__
 #define VIMCAT_API __attribute__((visibility("default")))
+#elif defined(_MSC_VER)
+#define VIMCAT_API __declspec(dllexport)
+#else
+#define VIMCAT_API /* nothing */
+#endif
 #endif
 
 /** set destination for debug messages

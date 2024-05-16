@@ -1,7 +1,13 @@
 #pragma once
 
 #ifndef VIMCAT_API
+#ifdef __GNUC__
 #define VIMCAT_API __attribute__((visibility("hidden")))
+#elif defined(_MSC_VER)
+#define VIMCAT_API __declspec(dllimport)
+#else
+#define VIMCAT_API /* nothing */
+#endif
 #endif
 
 #include <vimcat/debug.h>
