@@ -202,7 +202,7 @@ static int grapheme_put(const grapheme_t *g, FILE *f) {
 
 static void grapheme_free(grapheme_t *g) {
   assert(g != NULL);
-  memset(g, 0, sizeof(*g));
+  *g = (grapheme_t){0};
 }
 
 /// a 1-grapheme region of the terminal
@@ -221,7 +221,7 @@ static void cell_clear(cell_t *c) {
   assert(c != NULL);
 
   grapheme_free(&c->grapheme);
-  memset(c, 0, sizeof(*c));
+  *c = (cell_t){0};
 }
 
 static int cell_put(const cell_t *c, FILE *f) {
@@ -530,7 +530,7 @@ static int process_m(term_t *t, size_t index, bool is_default, size_t entry) {
 
   switch (entry) {
   case 0:
-    memset(&t->style, 0, sizeof(t->style));
+    t->style = (style_t){0};
     break;
 
   case 1:

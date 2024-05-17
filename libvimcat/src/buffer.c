@@ -9,7 +9,7 @@
 int buffer_open(buffer_t *b) {
   assert(b != NULL);
 
-  memset(b, 0, sizeof(*b));
+  *b = (buffer_t){0};
 
   b->f = open_memstream(&b->base, &b->size);
   if (ERROR(b->f == NULL))
@@ -46,5 +46,5 @@ void buffer_close(buffer_t *b) {
 
   free(b->base);
 
-  memset(b, 0, sizeof(*b));
+  *b = (buffer_t){0};
 }
