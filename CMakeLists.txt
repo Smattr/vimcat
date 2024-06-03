@@ -8,7 +8,7 @@ include(GNUInstallDirs)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# asprintf
+# asprintf, pipe2
 add_definitions(-D_GNU_SOURCE)
 
 # enable --as-needed, present on GNU ld on Linux, to minimise dependencies
