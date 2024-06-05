@@ -204,29 +204,11 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
     goto done;
 
   // dup /dev/null over Vim’s stdin and stderr
-  {
-    int flags = 0;
-    // macOS does not support `O_CLOEXEC` to open, so we need to do this
-    // separately later
-#ifndef __APPLE__
-    flags |= O_CLOEXEC;
-#endif
-    devnull = open("/dev/null", O_RDWR | flags);
-  }
+  devnull = open("/dev/null", O_RDWR | O_CLOEXEC);
   if (ERROR(devnull < 0)) {
     rc = errno;
     goto done;
   }
-#ifdef __APPLE__
-  {
-    // set close-on-exec
-    const int flags = fcntl(devnull, F_GETFD);
-    if (ERROR(fcntl(devnull, F_SETFD, flags | O_CLOEXEC) < 0)) {
-      rc = errno;
-      goto done;
-    }
-  }
-#endif
   if (ERROR((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
                                                    STDIN_FILENO))))
     goto done;
