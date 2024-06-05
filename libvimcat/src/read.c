@@ -42,12 +42,34 @@
 //   6. Trailing blank lines in the file are not emitted by Vim at all, as they
 //      do not need display.
 
+/// open a file for reading, setting close-on-exec
+static FILE *fopen_cloexec(const char *filename) {
+  assert(filename != NULL);
+
+#ifdef __APPLE__
+  // macOS does not support 'e' to `fopen`, so work around this
+  const int fd = open(filename, O_RDONLY | O_CLOEXEC);
+  if (ERROR(fd < 0))
+    return NULL;
+
+  FILE *f = fdopen(fd, "r");
+  if (ERROR(f == NULL)) {
+    const int err = errno;
+    (void)close(fd);
+    errno = err;
+  }
+
+  return f;
+#else
+  return fopen(filename, "re");
+#endif
+}
 /// learn the number of lines and maximum line width of a text file
 static int get_extent(const char *filename, size_t limit, size_t *rows,
                       size_t *columns) {
   assert(filename != NULL);
 
-  FILE *f = fopen(filename, "r");
+  FILE *f = fopen_cloexec(filename);
   if (ERROR(f == NULL))
     return errno;
 
