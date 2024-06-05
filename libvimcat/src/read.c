@@ -143,7 +143,7 @@ static int pipe_(int pipefd[2]) {
   // set close-on-exec
   for (size_t i = 0; i < 2; ++i) {
     const int flags = fcntl(pipefd[i], F_GETFD);
-    if (ERROR(fcntl(pipefd[i], F_SETFD, flags | O_CLOEXEC) < 0)) {
+    if (ERROR(fcntl(pipefd[i], F_SETFD, flags | FD_CLOEXEC) < 0)) {
       const int err = errno;
       for (size_t j = 0; j < 2; ++j) {
         (void)close(pipefd[j]);
