@@ -21,6 +21,13 @@ else()
   list(APPEND CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 endif()
 
+# when building static libraries, at best the visibility annotations are
+# redundant and at worst they are incorrect (`__declspec(dllimport)` on MSVC),
+# so suppress them
+if(NOT BUILD_SHARED_LIBS)
+  add_compile_definitions(VIMCAT_API=)
+endif()
+
 # enable even more warnings if the compiler supports them
 include(CheckCCompilerFlag)
 CHECK_C_COMPILER_FLAG(-Wall HAS_WARNING_ALL)
