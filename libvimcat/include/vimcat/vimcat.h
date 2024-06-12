@@ -2,7 +2,7 @@
 
 #ifndef VIMCAT_API
 #ifdef __GNUC__
-#define VIMCAT_API __attribute__((visibility("hidden")))
+#define VIMCAT_API /* nothing */
 #elif defined(_MSC_VER)
 #define VIMCAT_API __declspec(dllimport)
 #else
