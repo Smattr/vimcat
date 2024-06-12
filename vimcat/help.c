@@ -81,7 +81,7 @@ int help(void) {
   }
 
   // wait for man to finish
-  (void)waitpid(man, (int[]){0}, 0);
+  (void)waitpid(man, &(int){0}, 0);
 
   // cleanup
 done:
