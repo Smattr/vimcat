@@ -12,7 +12,7 @@ task:
         CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: pkg upgrade -y && pkg install -y cmake py39-pytest vim
-      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
+      test_script: uname -sr && env cmake -B build -S . && cmake --build build && cmake --build build --target check && cmake --install build
 
     - name: Linux
       container:
@@ -23,7 +23,7 @@ task:
         LC_ALL: C.UTF-8
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: apt-get update && apt-get install --no-install-recommends -y cmake python3-pytest vim xxd
-      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
+      test_script: uname -sr && env && cmake -B build -S . && cmake --build build && cmake --build build --target check && cmake --install build
 
     - name: Linux, release build
       container:
@@ -34,7 +34,7 @@ task:
         LC_ALL: C.UTF-8
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: apt-get update && apt-get install --no-install-recommends -y cmake python3-pytest vim xxd
-      test_script: uname -sr && env && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build . && cmake --build . -- check && cmake --build . -- install
+      test_script: uname -sr && env && cmake -DCMAKE_BUILD_TYPE=Release -B build -S . && cmake --build build && cmake --build build --target check && cmake --install build
 
     - name: macOS
       macos_instance:
@@ -43,7 +43,7 @@ task:
         CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: brew update && brew install python3 && python3 -m pip install --break-system-packages pytest
-      test_script: uname -sr && env && mkdir build && cd build && cmake .. && cmake --build . && cmake --build . -- check && sudo cmake --build . -- install
+      test_script: uname -sr && env && cmake -B build -S . && cmake --build build && cmake --build build --target check && sudo cmake --install build
 
     - name: clang-format
       container:
