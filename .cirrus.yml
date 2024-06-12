@@ -25,6 +25,17 @@ task:
       install_script: apt-get update && apt-get install --no-install-recommends -y cmake python3-pytest vim xxd
       test_script: uname -sr && env && cmake -B build -S . && cmake --build build && cmake --build build --target check && cmake --install build
 
+    - name: Linux, shared libraries
+      container:
+        image: gcc:14.1
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+        CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined -fuse-ld=gold
+        LC_ALL: C.UTF-8
+        UBSAN_OPTIONS: print_stacktrace=1
+      install_script: apt-get update && apt-get install --no-install-recommends -y cmake python3-pytest vim xxd
+      test_script: uname -sr && env && cmake -DBUILD_SHARED_LIBS=ON -B build -S . && cmake --build build && cmake --build build --target check && cmake --install build
+
     - name: Linux, release build
       container:
         image: gcc:14.1

@@ -15,6 +15,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
 endif()
 
+if(APPLE)
+  list(APPEND CMAKE_INSTALL_RPATH "@executable_path/../${CMAKE_INSTALL_LIBDIR}")
+else()
+  list(APPEND CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+endif()
+
 # enable even more warnings if the compiler supports them
 include(CheckCCompilerFlag)
 CHECK_C_COMPILER_FLAG(-Wall HAS_WARNING_ALL)
