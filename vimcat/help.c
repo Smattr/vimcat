@@ -78,11 +78,14 @@ int help(void) {
   // run man to display the help text
   pid_t man = 0;
   {
-    const char *argv[] = {"man",
+    const char *argv[] = {
+        "man",
 #ifdef __linux__
-                          "--local-file",
+        "--local-file",
+        "--prompt= Manual page vimcat(1) ?ltline %lt?L/%L.:byte %bB?s/%s..? "
+        "(END):?pB %pB\\%.. (press h for help or q to quit)",
 #endif
-                          path, NULL};
+        path, NULL};
     char *const *args = (char *const *)argv;
     if ((rc = posix_spawnp(&man, argv[0], NULL, NULL, args, get_environ())))
       goto done;
