@@ -37,10 +37,19 @@ target_include_directories(libvimcat
 
 set_target_properties(libvimcat PROPERTIES PREFIX "")
 
-install(TARGETS libvimcat EXPORT LibvimcatConfig
+install(TARGETS libvimcat EXPORT libvimcatConfig
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-export(TARGETS libvimcat FILE LibvimcatConfig.cmake)
+install(
+  EXPORT libvimcatConfig
+  FILE libvimcatConfig.cmake
+  NAMESPACE vimcat::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vimcat
+)
+install(
+  FILES vimcatConfig.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vimcat
+)
