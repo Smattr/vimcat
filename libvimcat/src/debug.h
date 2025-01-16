@@ -10,13 +10,13 @@
 extern FILE *vimcat_debug INTERNAL;
 
 /// emit a debug message
-#define DEBUG(args...)                                                         \
+#define DEBUG(...)                                                             \
   do {                                                                         \
     if (UNLIKELY(vimcat_debug != NULL)) {                                      \
       const char *name_ = strrchr(__FILE__, '/');                              \
       flockfile(vimcat_debug);                                                 \
       fprintf(vimcat_debug, "[VIMCAT] libvimcat/src%s:%d: ", name_, __LINE__); \
-      fprintf(vimcat_debug, args);                                             \
+      fprintf(vimcat_debug, __VA_ARGS__);                                      \
       fprintf(vimcat_debug, "\n");                                             \
       funlockfile(vimcat_debug);                                               \
     }                                                                          \
