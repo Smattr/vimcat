@@ -21,7 +21,7 @@ static inline bool colour_eq(colour_t a, colour_t b) {
   return true;
 }
 
-/// convert an 8-bit colour to its 24-bit equuivalent
+/// convert an 8-bit colour to its 24-bit equivalent
 INTERNAL colour_t colour_8_to_24(uint8_t colour);
 
 /// Convert a 24-bit colour to its 8-bit equivalent. Returns a value greater
