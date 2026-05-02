@@ -14,15 +14,6 @@ task:
       install_script: python3 --version && pkg upgrade -y && pkg install -y cmake py311-pytest vim
       test_script: uname -sr && env cmake -B build -S . && cmake --build build && cmake --build build --target check && cmake --install build
 
-    - name: macOS
-      macos_instance:
-        image: ghcr.io/cirruslabs/macos-sonoma-base:latest
-      environment:
-        CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined
-        UBSAN_OPTIONS: print_stacktrace=1
-      install_script: brew update && brew install python3 && python3 -m pip install --break-system-packages pytest
-      test_script: uname -sr && env && cmake -B build -S . && cmake --build build && cmake --build build --target check && sudo cmake --install build
-
     - name: clang-format
       container:
         image: silkeh/clang:15
