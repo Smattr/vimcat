@@ -1,0 +1,94 @@
+name: Github Actions CI
+permissions: {}
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-24.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined
+      UBSAN_OPTIONS: print_stacktrace=1
+    steps:
+      - run: uname -rms
+      - run: python3 --version
+      - run: sudo apt-get update
+      - run: sudo apt-get install --no-install-recommends -y python3-pytest vim xxd
+      - run: echo "cloning ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+      - run: git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
+      - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
+      - run: cmake -B build -S wd
+      - run: cmake --build build
+      - run: cmake --build build --target check
+      - run: sudo cmake --install build
+
+  linux_shared:
+    name: Linux, shared libraries
+    runs-on: ubuntu-24.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined
+      UBSAN_OPTIONS: print_stacktrace=1
+    steps:
+      - run: uname -rms
+      - run: python3 --version
+      - run: sudo apt-get update
+      - run: sudo apt-get install --no-install-recommends -y python3-pytest vim xxd
+      - run: echo "cloning ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+      - run: git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
+      - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
+      - run: cmake -DBUILD_SHARED_LIBS=ON -B build -S wd
+      - run: cmake --build build
+      - run: cmake --build build --target check
+      - run: sudo cmake --install build
+
+  linux_release:
+    name: Linux, release build
+    runs-on: ubuntu-24.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined
+      UBSAN_OPTIONS: print_stacktrace=1
+    steps:
+      - run: uname -rms
+      - run: python3 --version
+      - run: sudo apt-get update
+      - run: sudo apt-get install --no-install-recommends -y python3-pytest vim xxd
+      - run: echo "cloning ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+      - run: git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
+      - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
+      - run: cmake -DCMAKE_BUILD_TYPE=Release -B build -S wd
+      - run: cmake --build build
+      - run: cmake --build build --target check
+      - run: sudo cmake --install build
+
+  macos:
+    name: macOS
+    runs-on: macos-26-intel
+    env:
+      CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined
+      UBSAN_OPTIONS: print_stacktrace=1
+    steps:
+      - run: uname -rms
+      - run: python3 --version
+      - run: env PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install pytest
+      - run: echo "cloning ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+      - run: git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
+      - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
+      - run: cmake -B build -S wd
+      - run: cmake --build build
+      - run: cmake --build build --target check
+      - run: sudo cmake --install build
+
+  clang_format:
+    name: clang-format
+    runs-on: ubuntu-22.04
+    steps:
+      - run: uname -rms
+      - run: echo "cloning ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+      - run: git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
+      - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
+      - run: cd wd && git ls-files -z '**/*.c' '**/*.h' | xargs -0 -- clang-format-15 --dry-run --style=file --Werror
