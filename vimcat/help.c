@@ -41,7 +41,7 @@ int help(void) {
 
   // find temporary storage space
   const char *TMPDIR = getenv("TMPDIR");
-  if (TMPDIR == NULL)
+  if (TMPDIR == NULL || access(TMPDIR, R_OK | W_OK | X_OK) != 0)
     TMPDIR = "/tmp";
 
   // create a temporary path
