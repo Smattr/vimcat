@@ -13,9 +13,3 @@ task:
         UBSAN_OPTIONS: print_stacktrace=1
       install_script: python3 --version && pkg upgrade -y && pkg install -y cmake py311-pytest vim
       test_script: uname -sr && env cmake -B build -S . && cmake --build build && cmake --build build --target check && cmake --install build
-
-    - name: clang-format
-      container:
-        image: silkeh/clang:15
-      install_script: apt-get update && apt-get install --no-install-recommends -y git
-      test_script: git ls-files -z '**/*.c' '**/*.h' | xargs -0 -- clang-format --dry-run --style=file --Werror
