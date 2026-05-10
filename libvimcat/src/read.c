@@ -234,9 +234,13 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
   if (ERROR((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
                                                    STDIN_FILENO))))
     goto done;
-  if (ERROR((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
-                                                   STDERR_FILENO))))
-    goto done;
+  if (vimcat_debug == NULL) {
+    if (ERROR((rc = posix_spawn_file_actions_adddup2(&actions, devnull,
+                                                     STDERR_FILENO))))
+      goto done;
+  } else {
+    DEBUG("leading Vim’s stderr not redirected");
+  }
 
   // construct Vim parameter to force terminal height
   char set_rows[sizeof("+set lines=") + 20];
