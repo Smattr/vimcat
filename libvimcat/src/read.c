@@ -239,7 +239,7 @@ static int run_vim(FILE **out, pid_t *pid, const char *filename, size_t rows,
                                                      STDERR_FILENO))))
       goto done;
   } else {
-    DEBUG("leading Vim’s stderr not redirected");
+    DEBUG("leaving Vim’s stderr not redirected");
   }
 
   // construct Vim parameter to force terminal height
