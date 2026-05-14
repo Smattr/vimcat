@@ -34,7 +34,7 @@ def set_home(home: Path) -> Dict[str, str]:
 @pytest.mark.parametrize("t_Co", (2, 8, 16, 88, 256, 16777216))
 @pytest.mark.parametrize("termguicolors", (False, True))
 @pytest.mark.parametrize("title", (False, True))
-def test_colour(
+def test_colour(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     tmp_path: Path,
     colour: Optional[str],
     no_color: bool,
