@@ -131,9 +131,11 @@ jobs:
       - run: uname -rms
       - run: python3 --version
       - run: sudo apt-get update
-      - run: sudo apt-get install --no-install-recommends -y black python3-isort
+      - run: sudo apt-get install --no-install-recommends -y black python3-isort python3-pytest
       - run: echo "cloning ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
       - run: git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
       - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
       - run: cd wd && git ls-files -z '**/*.py' | xargs -0 -- python3 -m black --check --
       - run: cd wd && git ls-files -z '**/*.py' | xargs -0 -- python3 -m isort --profile=black --check --
+      - run: python3 -m pip install --user pylint
+      - run: cd wd && git ls-files -z '**/*.py' | xargs -0 -- python3 -m pylint --
