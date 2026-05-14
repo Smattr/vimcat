@@ -18,8 +18,8 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 add_custom_command(
   OUTPUT version.c
-  COMMAND src/make-version.py ${CMAKE_CURRENT_BINARY_DIR}/version.c
-  MAIN_DEPENDENCY src/make-version.py
+  COMMAND src/make_version.py ${CMAKE_CURRENT_BINARY_DIR}/version.c
+  MAIN_DEPENDENCY src/make_version.py
   DEPENDS always_run
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
