@@ -17,7 +17,9 @@ def all_versions() -> Iterator[str]:
     """
     All known versions in the CHANGELOG.rst.
     """
-    with open(Path(__file__).parent / "../../CHANGELOG.rst", "rt") as f:
+    with open(
+        Path(__file__).parent / "../../CHANGELOG.rst", "rt", encoding="utf-8"
+    ) as f:
         for line in f:
             m = re.match(r"(v\d{4}\.\d{2}\.\d{2})$", line)
             if m is not None:
@@ -108,7 +110,7 @@ def main(args: [str]) -> int:
     # get the contents of the old version file if it exists
     old = None
     if os.path.exists(args[1]):
-        old = Path(args[1]).read_text()
+        old = Path(args[1]).read_text(encoding="utf-8")
 
     version = None
 
@@ -155,7 +157,7 @@ size_t KNOWN_VERSIONS_LENGTH INTERNAL =
     # If the version has changed, update the output. Otherwise we leave the old
     # contents – and more importantly, the timestamp – intact.
     if old != new:
-        Path(args[1]).write_text(new)
+        Path(args[1]).write_text(new, encoding="utf-8")
 
     return 0
 

@@ -56,7 +56,7 @@ def test_colour(
         del env["NO_COLOR"]
 
     # write a vimrc to force syntax highlighting and 8-bit colour
-    with open(tmp_path / ".vimrc", "wt") as f:
+    with open(tmp_path / ".vimrc", "wt", encoding="utf-8") as f:
         f.write(f"syntax on\nset t_Co={t_Co}\n")
         if termguicolors:
             f.write(
@@ -251,7 +251,7 @@ def test_tall(tmp_path: Path, height: int):
     env = set_home(tmp_path)
 
     # setup a file with many lines
-    with open(sample, "wt") as f:
+    with open(sample, "wt", encoding="utf-8") as f:
         for i in range(height):
             f.write(f"line {i}\n")
 
@@ -321,7 +321,7 @@ def test_wide(tmp_path: Path, width: int):
     env = set_home(tmp_path)
 
     # setup a file with a wide line:
-    with open(sample, "wt") as f:
+    with open(sample, "wt", encoding="utf-8") as f:
         for _ in range(width):
             f.write("a")
         f.write("\n")
