@@ -3,12 +3,13 @@ Vimcat test suite
 """
 
 import os
-import pytest
 import re
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, Optional
+
+import pytest
 
 
 def make_vimcatrc(home: Path):
