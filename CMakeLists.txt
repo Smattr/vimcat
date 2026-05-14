@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 project(vimcat LANGUAGES C)
 
+if(CMAKE_BUILD_TYPE)
+  if(NOT CMAKE_BUILD_TYPE STREQUAL Debug AND
+     NOT CMAKE_BUILD_TYPE STREQUAL Release AND
+     NOT CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo AND
+     NOT CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
+    message(FATAL_ERROR "invalid CMAKE_BUILD_TYPE \"${CMAKE_BUILD_TYPE}\"")
+  endif()
+endif()
+
 include(GNUInstallDirs)
 
 set(CMAKE_C_STANDARD 11)
