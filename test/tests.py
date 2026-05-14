@@ -180,7 +180,7 @@ def test_newline(tmp_path: Path, case: str):
     )
 
     # read the sample in Python
-    reference = source.read_text()
+    reference = source.read_text(encoding="utf-8")
 
     # if it was non-empty and did not end in a newline, `vimcat` should have added
     # one
