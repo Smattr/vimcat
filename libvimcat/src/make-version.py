@@ -88,11 +88,19 @@ def is_dirty() -> bool:
     """
     dirty = False
 
-    p = sp.run(["git", "diff", "--exit-code"], stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    p = sp.run(
+        ["git", "diff", "--exit-code"],
+        stdout=sp.DEVNULL,
+        stderr=sp.DEVNULL,
+        check=False,
+    )
     dirty |= p.returncode != 0
 
     p = sp.run(
-        ["git", "diff", "--cached", "--exit-code"], stdout=sp.DEVNULL, stderr=sp.DEVNULL
+        ["git", "diff", "--cached", "--exit-code"],
+        stdout=sp.DEVNULL,
+        stderr=sp.DEVNULL,
+        check=False,
     )
     dirty |= p.returncode != 0
 

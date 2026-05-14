@@ -198,7 +198,7 @@ def test_no_file(tmp_path: Path):
     input = tmp_path / "no-file.txt"
     env = set_home(tmp_path)
 
-    p = subprocess.run(["vimcat", input], capture_output=True, env=env)
+    p = subprocess.run(["vimcat", input], capture_output=True, check=False, env=env)
 
     assert p.returncode != 0, "EXIT_SUCCESS status with non-existent file"
     assert p.stdout == b"", "output for non-existent file"
@@ -222,7 +222,11 @@ def test_no_vim(tmp_path: Path):
     # run `vimcat` on an arbitrary file
     src = Path(__file__).resolve()
     p = subprocess.run(
-        [vimcat, src], capture_output=True, universal_newlines=True, env=env
+        [vimcat, src],
+        capture_output=True,
+        universal_newlines=True,
+        check=False,
+        env=env,
     )
 
     assert p.returncode != 0, "vimcat exited with success even without vim available"
