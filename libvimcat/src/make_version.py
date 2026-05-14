@@ -108,6 +108,7 @@ def is_dirty() -> bool:
 
 
 def main(args: [str]) -> int:
+    """entry point"""
 
     if len(args) != 2 or args[1] == "--help":
         sys.stderr.write(

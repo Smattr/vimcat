@@ -34,11 +34,11 @@ def set_home(home: Path) -> Dict[str, str]:
 @pytest.mark.parametrize("t_Co", (2, 8, 16, 88, 256, 16777216))
 @pytest.mark.parametrize("termguicolors", (False, True))
 @pytest.mark.parametrize("title", (False, True))
-def test_colour(
+def test_colour(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     tmp_path: Path,
     colour: Optional[str],
     no_color: bool,
-    t_Co: int,
+    t_Co: int,  # pylint: disable=invalid-name
     termguicolors: bool,
     title: bool,
 ):
@@ -173,14 +173,14 @@ def test_newline(tmp_path: Path, case: str):
     env = set_home(tmp_path)
 
     # run `vimcat` on some sample input
-    input = Path(__file__).parent / case
-    assert input.exists(), "missing test case input"
+    source = Path(__file__).parent / case
+    assert source.exists(), "missing test case input"
     output = subprocess.check_output(
-        ["vimcat", "--debug", input], universal_newlines=True, env=env
+        ["vimcat", "--debug", source], universal_newlines=True, env=env
     )
 
     # read the sample in Python
-    reference = input.read_text()
+    reference = source.read_text(encoding="utf-8")
 
     # if it was non-empty and did not end in a newline, `vimcat` should have added
     # one
@@ -195,10 +195,10 @@ def test_no_file(tmp_path: Path):
     passing a non-existent file should produce no output and an error message
     """
 
-    input = tmp_path / "no-file.txt"
+    source = tmp_path / "no-file.txt"
     env = set_home(tmp_path)
 
-    p = subprocess.run(["vimcat", input], capture_output=True, check=False, env=env)
+    p = subprocess.run(["vimcat", source], capture_output=True, check=False, env=env)
 
     assert p.returncode != 0, "EXIT_SUCCESS status with non-existent file"
     assert p.stdout == b"", "output for non-existent file"
@@ -292,14 +292,14 @@ def test_utf8(tmp_path: Path, case: str):
     env = set_home(tmp_path)
 
     # run `vimcat` on a sample containing characters of various lengths
-    input = Path(__file__).parent / case
-    assert input.exists(), "missing test case input"
+    source = Path(__file__).parent / case
+    assert source.exists(), "missing test case input"
     output = subprocess.check_output(
-        ["vimcat", "--debug", input], universal_newlines=True, env=env
+        ["vimcat", "--debug", source], universal_newlines=True, env=env
     )
 
     # read the sample with Python, which we know understands UTF-8 correctly
-    reference = input.read_text(encoding="utf-8").strip()
+    reference = source.read_text(encoding="utf-8").strip()
 
     # `vimcat` should have given us the same, under the assumption no syntax
     # highlighting of basic text files is enabled
