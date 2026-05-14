@@ -38,7 +38,7 @@ def test_colour(
     tmp_path: Path,
     colour: Optional[str],
     no_color: bool,
-    t_Co: int,
+    t_Co: int,  # pylint: disable=invalid-name
     termguicolors: bool,
     title: bool,
 ):
