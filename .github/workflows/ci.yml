@@ -122,6 +122,23 @@ jobs:
       - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
       - run: cd wd && git ls-files -z '**/*.c' '**/*.h' | xargs -0 -- clang-format-15 --dry-run --style=file --Werror
 
+  c_analysis:
+    name: C analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - run: uname -rms
+      - run: python3 --version
+      - run: sudo apt-get update
+      - run: sudo apt-get install --no-install-recommends -y vim xxd
+      - run: echo "cloning ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+      - run: git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
+      - run: cd wd && git fetch -- origin ${{ github.event.pull_request.head.sha }} && git checkout FETCH_HEAD
+      - run: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build -S wd
+      - run: cmake --build build
+      - run: python3 -m pip install --user codechecker
+      - run: CodeChecker analyze --analyzers clangsa --enable sensitive build/compile_commands.json --output reports
+      - run: CodeChecker parse reports
+
   py_format:
     name: Python format
     runs-on: ubuntu-22.04
