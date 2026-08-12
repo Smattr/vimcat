@@ -141,7 +141,7 @@ jobs:
 
   py_format:
     name: Python format
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
