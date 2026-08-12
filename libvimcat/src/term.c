@@ -628,8 +628,7 @@ static int process_csi(term_t *t, const char *csi) {
 #endif
 
   // check we have a known CSI
-  int (*handler)(term_t * t, size_t index, bool is_default, size_t entry) =
-      NULL;
+  int (*handler)(term_t *t, size_t index, bool is_default, size_t entry) = NULL;
   switch (final) {
   case 'A': // Cursor Up
     handler = process_A;
