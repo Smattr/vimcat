@@ -20,7 +20,7 @@ jobs:
           set -u
           set -x
           uname -rms
-          pkg install -y cmake git python3 py311-pytest vim
+          pkg install -y cmake git python3 devel/py-pytest vim
           python3 --version
           git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
           cd wd
