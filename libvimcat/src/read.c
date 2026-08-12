@@ -103,7 +103,10 @@ static int get_extent(const char *filename, size_t limit, size_t *rows,
     // is this a Windows end of line?
     if (c == '\r') {
       int n = getc(f);
-      if (n == '\n') {
+      if (n == EOF) {
+        ++width;
+        break;
+      } else if (n == '\n') {
         ++lines;
         if (max_width < width)
           max_width = width;
@@ -111,11 +114,9 @@ static int get_extent(const char *filename, size_t limit, size_t *rows,
         continue;
       }
 
-      if (n != EOF) {
-        if (ERROR(ungetc(n, f) == EOF)) {
-          rc = EIO;
-          goto done;
-        }
+      if (ERROR(ungetc(n, f) == EOF)) {
+        rc = EIO;
+        goto done;
       }
     }
 
