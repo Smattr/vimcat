@@ -7,7 +7,7 @@ on:
 jobs:
   freebsd13:
     name: FreeBSD
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
     - uses: vmactions/freebsd-vm@7ca82f79fe3078fecded6d3a2bff094995447bbd
       with:
@@ -20,7 +20,7 @@ jobs:
           set -u
           set -x
           uname -rms
-          pkg install -y cmake git python3 py311-pytest vim
+          pkg install -y cmake git python3 devel/py-pytest vim
           python3 --version
           git clone --no-checkout -- ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} wd
           cd wd
@@ -36,7 +36,7 @@ jobs:
 
   linux:
     name: Linux
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       DEBIAN_FRONTEND: noninteractive
       CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined
@@ -56,7 +56,7 @@ jobs:
 
   linux_shared:
     name: Linux, shared libraries
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       DEBIAN_FRONTEND: noninteractive
       CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined
@@ -76,7 +76,7 @@ jobs:
 
   linux_release:
     name: Linux, release build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       DEBIAN_FRONTEND: noninteractive
       CFLAGS: -Werror -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined
@@ -124,7 +124,7 @@ jobs:
 
   c_analysis:
     name: C analysis
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - run: uname -rms
       - run: python3 --version
@@ -141,7 +141,7 @@ jobs:
 
   py_format:
     name: Python format
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
